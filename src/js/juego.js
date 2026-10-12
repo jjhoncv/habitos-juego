@@ -4227,6 +4227,13 @@
   // Se activan solos al tocar la pantalla y se esconden si usas el teclado.
   const raiz = document.documentElement;
   let tactil = false;
+  // en pantallas grandes (iPad de 11" o 12,9") los controles crecen con la pantalla: --k va de 1 a 1.6
+  function escalaTactil() {
+    const k = Math.max(1, Math.min(1.6, Math.min(window.innerWidth / 900, window.innerHeight / 650)));
+    raiz.style.setProperty('--k', k.toFixed(3));
+  }
+  window.addEventListener('resize', escalaTactil);
+  escalaTactil();
   function modoTactil(on) {
     if (on === tactil) return;
     tactil = on;
