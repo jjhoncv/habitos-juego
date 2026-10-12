@@ -4,4 +4,4 @@ Juego 3D en el navegador sobre crecer y los hábitos de cada día. Se juega con 
 
 **Jugar:** https://jjhoncv.github.io/habitos-juego/
 
-Esta carpeta solo tiene los archivos publicados del juego (versión ab9b8f6).
+Esta carpeta solo tiene los archivos publicados del juego (versión bdc8f4e).

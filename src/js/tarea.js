@@ -198,7 +198,9 @@
     $('#trGlobo').textContent = `${nom()}: "${l.globo}"`;
     $('#trDibujo').innerHTML = l.dibujo;
     $('#trTruco').textContent = l.truco;
-    A.hablar(l.voz, 'abuela');
+    // la cachorrita explica con su vocecita tierna (un ladridito y luego habla)
+    A.sfx('guauTierno');
+    setTimeout(() => { if (T) A.hablar(l.voz, 'perrita'); }, 380);
     $('#trOtra').focus();
   }
   function practicar() {
@@ -215,6 +217,7 @@
       : p >= 3 ? `¡Bien! ${p} de ${N} al primer intento, y aprendiste los demás.`
         : `Te costó, pero aprendiste: ${p} de ${N} al primer intento. Mañana te va a salir mejor.`;
     $('#trGloboFin').textContent = T.solo ? frase : `${n}: "${frase}"`;
+    if (!T.solo) { A.sfx('guauTierno'); setTimeout(() => A.hablar(frase, 'perrita'), 380); }
     $('#trResultado').textContent = `Te tomó ${T.minutos} minutos.`;
     A.sfx(p >= 3 ? 'logro' : 'bien');
     $('#trCerrar').focus();

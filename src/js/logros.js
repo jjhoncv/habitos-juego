@@ -44,6 +44,10 @@
     ['Escondite', 'Un escondite', 'Cuando vienen los pasos de mamá', 'Esconderte… si no te delatan'],
     ['Parque', 'El parque', 'El sábado, paseando con papá', 'Columpios, tobogán, helado y amigos para tu cachorra'],
     ['Mesa de revisión', 'La mesa de la veterinaria', 'La veterinaria (miércoles)', 'Pesarlo, revisarlo y vacunarlo lo mantiene sano'],
+    ['Sótano', 'El sótano', 'Una puerta del pasillo', 'Con el foco prendido y tu cachorra al lado, no da miedo'],
+    ['Altillo', 'El altillo de la abuela', 'Una puerta con candado en el pasillo', 'Fotos y recuerdos de cuando mamá era chiquita'],
+    ['Taller', 'El taller de papá', 'Una puerta con candado en la sala', 'Lijar, pintar y arreglar cosas con cuidado'],
+    ['Piscina', 'La piscina', 'Por el portón del jardín', 'Guiar a tu cachorra nadando: bucear, el aro y la escalerita'],
   ];
   const claveDe = (nombre) => {
     if (/^Plato de /.test(nombre)) return 'Plato';
@@ -71,6 +75,7 @@
     ['amigo-nuevo', 'Un amigo nuevo', 'Hacerte amigo de Teo el día que llegó'],
     ['granPresentacion', 'Gran presentación', 'Preparar tu trabajo con tiempo y que te salga muy bien en la Feria del colegio'],
     ['abuela', 'Domingo con la abuela', 'Almorzar con la abuela y que te lea tu diario'],
+    ['llavero', 'Las llaves del sótano', 'Encontrar las dos llaves del sótano con ayuda de tu cachorro'],
   ];
 
   let pr = H.progreso.cargar();

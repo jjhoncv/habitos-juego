@@ -1,0 +1,64 @@
+/* Piscina: botones grandes de órdenes para la cachorrita (mouse, teclado y táctil) y las gotas cuando se sacude. */
+.pisc-hud { position: fixed; inset: 0; z-index: 7; pointer-events: none; }
+.pisc-hud[hidden] { display: none; }
+.pisc-meta {
+  position: fixed; left: 50%; top: calc(64px + env(safe-area-inset-top, 0px)); transform: translateX(-50%);
+  width: min(560px, calc(100vw - 32px)); padding: 10px 16px; border-radius: 16px;
+  background: var(--papel, #fff7ec); color: var(--tinta, #1d2340); border: 3px solid var(--tinta, #1d2340);
+  box-shadow: 0 4px 0 var(--tinta, #1d2340); display: grid; gap: 2px; text-align: center; pointer-events: auto;
+}
+.pisc-meta b { font: 800 18px var(--f-display, inherit); color: #2f6fa6; }
+.pisc-meta span { font-size: 16px; line-height: 1.3; }
+.pisc-meta small { font-weight: 800; color: #2a8a5e; min-height: 0; }
+.pisc-meta small:empty { display: none; }
+
+.pisc-pad, .pisc-acc { position: fixed; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 8px; pointer-events: auto; }
+.pisc-pad {
+  left: calc(16px + env(safe-area-inset-left, 0px));
+  grid-template-columns: repeat(3, 92px); grid-template-rows: repeat(2, 76px);
+  grid-template-areas: ". ad ." "iz ve de";
+}
+.pisc-adelante { grid-area: ad; } .pisc-izq { grid-area: iz; } .pisc-ven { grid-area: ve; } .pisc-der { grid-area: de; }
+.pisc-acc { right: calc(16px + env(safe-area-inset-right, 0px)); grid-template-columns: 112px; grid-auto-rows: 76px; }
+
+.pisc-b {
+  display: grid; place-items: center; align-content: center; gap: 0; padding: 4px;
+  font: 800 15px var(--f-display, inherit); color: var(--tinta, #1d2340); background: var(--papel, #fff7ec);
+  border: 3px solid var(--tinta, #1d2340); border-radius: 16px; box-shadow: 0 5px 0 var(--tinta, #1d2340);
+  cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none;
+}
+.pisc-b:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--tinta, #1d2340); }
+.pisc-b:focus-visible { outline: 3px solid #3d9bd4; outline-offset: 2px; }
+.pisc-f { font-size: 22px; line-height: 1; color: #2f6fa6; }
+.pisc-b kbd { font-size: 11px; opacity: .65; }
+.pisc-bucea { background: #bfe9f7; }
+.pisc-sal { background: #9ff0c4; }
+.pisc-menu { background: #ffe3a6; font-size: 14px; }
+.toque .pisc-b kbd { display: none; }
+
+/* mientras guías a la cachorrita, la palanca y los botones del motor se esconden */
+html.pisc-on #palanca, html.pisc-on .accion-btn, html.pisc-on .mov-btn, html.pisc-on #prompt,
+html.pisc-on #bCorrer, html.pisc-on #bSilbar, html.pisc-on #bAlbum, html.pisc-on #crecerHud, html.pisc-on .b-mapa { display: none !important; }
+
+@media (max-width: 600px) {
+  .pisc-pad { grid-template-columns: repeat(3, 72px); grid-template-rows: repeat(2, 64px); gap: 6px; }
+  .pisc-acc { grid-template-columns: 92px; grid-auto-rows: 58px; gap: 6px; }
+  .pisc-b { font-size: 13px; border-radius: 14px; }
+  .pisc-meta span { font-size: 14px; }
+}
+
+/* gotas en la pantalla cuando se sacude */
+.pisc-gotas { position: fixed; inset: 0; z-index: 8; pointer-events: none; }
+.pisc-gotas[hidden] { display: none; }
+.pisc-gotas i {
+  position: absolute; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.9), rgba(120,200,240,.55) 45%, rgba(60,150,210,.25));
+  opacity: 0; transform: scale(.3);
+}
+.pisc-gotas.on i { animation: pisc-gota 2s ease-out forwards; }
+@keyframes pisc-gota {
+  15% { opacity: 1; transform: scale(1); }
+  70% { opacity: .9; transform: translateY(24px) scale(1); }
+  100% { opacity: 0; transform: translateY(60px) scale(.9); }
+}
+@media (prefers-reduced-motion: reduce) { .pisc-gotas.on i { animation-duration: .01s; opacity: .8; } }

@@ -1,0 +1,16 @@
+{
+  "name": "Hábitos: una semana con Molly",
+  "short_name": "Hábitos",
+  "description": "Juego 3D para niños sobre los hábitos de cada día, con una cachorrita que crece contigo.",
+  "lang": "es",
+  "start_url": "juego.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#1d2340",
+  "theme_color": "#1d2340",
+  "icons": [
+    { "src": "src/img/icono-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "src/img/icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

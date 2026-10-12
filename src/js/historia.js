@@ -86,9 +86,13 @@
     <span class="solo-tecla"><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> caminar</span>
     <span class="solo-tecla"><kbd>E</kbd> usar objeto</span>
     <span class="solo-tecla"><kbd>1</kbd>–<kbd>4</kbd> elegir</span>
+    <span class="solo-tecla"><kbd>Z</kbd> saltar</span>
+    <span class="solo-tecla"><kbd>X</kbd> agacharte (mantén)</span>
     <span class="solo-toque"><kbd data-t="Palanca">←</kbd> caminar</span>
     <span class="solo-toque"><kbd data-t="Usar">E</kbd> usar objeto</span>
-    <span class="solo-toque">Toca una opción para elegir</span>
+    <span class="solo-toque"><kbd data-t="Saltar">Z</kbd> saltar</span>
+    <span class="solo-toque"><kbd data-t="Agacharse">X</kbd> mantén para agacharte</span>
+<span class="solo-toque">Toca una opción para elegir</span>
     <span>Con sonido y voces: sube el volumen</span>
   </div>
   <div class="i-botones">

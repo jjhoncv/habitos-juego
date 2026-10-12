@@ -1,8 +1,8 @@
 /* Día 3 (miércoles): visita a la veterinaria con la cachorrita.
    - En la tarde, desde las 16:00, mamá avisa que hoy toca la vacuna. Tú decides cuándo ir:
      al terminar de hablar te lo ofrece, y la puerta de la calle del comedor también te deja ir.
-   - Si a las 17:30 todavía no fueron, mamá lo recuerda una vez. A las 19:00 la veterinaria cierra:
-     la cachorrita se queda sin vacuna y mamá se pone un poco triste (nada más).
+   - Mamá no lo vuelve a recordar durante el día (tú decides). A las 19:00 la veterinaria cierra:
+     la cachorrita se queda sin vacuna; papá y mamá lo conversan contigo en la noche (charla de la noche en juego.js).
    - En la veterinaria: pesarla, revisarla en la mesa, la vacuna (si le tiene miedo, puedes calmarla)
      y el consejo de la doctora. Si la cuidaste bien, te felicita.
    - Al volver a casa se anota en el diario y ganas el hábito "Cuidar la salud de …". */
@@ -14,12 +14,11 @@
   const A = H.motor.api;
   const { THREE, PI } = A;
   const h = (hh, mm) => hh * 60 + (mm || 0);
-  const AVISO = h(16), RECUERDA = h(17, 30), CIERRA = h(19);
+  const AVISO = h(16), CIERRA = h(19);
   const CASA = ['dormitorio', 'pasillo', 'bano', 'comedor', 'sala', 'jardin'];
 
   const nom = () => (A.perfil && A.perfil.mascota && A.perfil.mascota.nombre) || 'Molly';
   const yo = () => (A.perfil && A.perfil.nombre) || 'Dani';
-  const nina = () => A.perfil && A.perfil.genero === 'nina';
   const esHoy = () => H.progreso.cargar().dia === 3 && A.S.fase === 'tarde';
   // el evento sigue abierto: ya avisaron, todavía no fueron y la veterinaria no cerró
   const pendiente = () => esHoy() && !A.S.f.d3vet && !A.S.f.d3perdio && A.S.min < CIERRA;
@@ -64,7 +63,7 @@
       H.progreso.guardar({ veterinario: { fue: false, vacuna: false, dia: 3 } });
       A.cambiar({ confianza: -3 });
       A.anotar(`No fueron a la veterinaria. ${nom()} se quedó sin su vacuna hoy.`, 'mal');
-      A.visitaMama([`La veterinaria ya cerró, ${yo()}…`, `${nom()} se quedó sin su vacuna. Me da penita.`, 'Mañana llamo para pedir otro turno.'], { esconder: false });
+      // sin visita: lo conversan en la noche, al acostarte
       return;
     }
     if (!S.f.d3aviso && S.min >= AVISO && libre()) {
@@ -77,10 +76,7 @@
       });
       return;
     }
-    if (S.f.d3aviso && !S.f.d3recuerda && S.min >= RECUERDA && libre()) {
-      S.f.d3recuerda = true;
-      A.visitaMama([`${yo()}, no te olvides de la vacuna de ${nom()}.`, `Cuando estés ${nina() ? 'lista' : 'listo'}, salimos por la puerta del comedor.`], { esconder: false });
-    }
+    // (ya no hay recordatorio a las 17:30: durante el día nadie te dice qué hacer)
   });
 
   // la puerta de la calle del comedor: en la tarde de hoy te deja ir a la veterinaria

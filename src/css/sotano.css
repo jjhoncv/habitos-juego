@@ -1,0 +1,65 @@
+/* Sótano: el cartel "Juegas con tu cachorrita" y sus botones (Olfatear, Ladrar, Saltar, Volver) */
+.sot-hud {
+  position: fixed;
+  left: 50%;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 30;
+  width: max-content;
+  max-width: min(560px, calc(100vw - 32px));
+  box-sizing: border-box;
+  padding: 8px 12px 10px;
+  border: 2px solid var(--tinta, #1d2340);
+  border-radius: 16px;
+  background: var(--papel, #fff7ec);
+  box-shadow: 3px 3px 0 var(--tinta, #1d2340);
+  text-align: center;
+  pointer-events: auto;
+}
+.sot-quien {
+  margin: 0 0 6px;
+  font: 800 18px/1.1 var(--f-display, sans-serif);
+  color: var(--tinta, #1d2340);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.sot-pata {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--sol, #f2a623);
+  box-shadow: -7px -8px 0 -3px var(--sol, #f2a623), 0 -11px 0 -3px var(--sol, #f2a623), 7px -8px 0 -3px var(--sol, #f2a623);
+  flex: none;
+}
+.sot-botones { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.sot-botones button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 6px 14px;
+  border: 2px solid var(--tinta, #1d2340);
+  border-radius: 12px;
+  background: var(--menta, #2aa876);
+  color: #fff;
+  font: 800 16px/1 var(--f-display, sans-serif);
+  box-shadow: 2px 2px 0 var(--tinta, #1d2340);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.sot-botones button.sec { background: var(--papel-2, #f4e7d4); color: var(--tinta, #1d2340); }
+.sot-botones button:active { transform: translate(2px, 2px); box-shadow: none; }
+.sot-botones kbd {
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.18);
+  font: 700 12px/1.2 var(--f-reloj, monospace);
+}
+/* en tablet: más arriba, para no tapar la palanca ni el botón Usar */
+html.toque .sot-hud { bottom: calc(176px + env(safe-area-inset-bottom, 0px)); }
+html.toque .sot-botones button { min-height: 52px; font-size: 18px; }
+@media (max-width: 600px) {
+  .sot-quien { font-size: 16px; }
+  .sot-botones button { padding: 6px 10px; font-size: 15px; }
+}

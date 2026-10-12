@@ -1,0 +1,27 @@
+/* Obstáculos: el aviso grande cuando algo se cae y la cuenta de las escondidas */
+.obs-aviso {
+  position: fixed;
+  left: 50%;
+  top: 28%;
+  transform: translateX(-50%);
+  z-index: 40;
+  padding: 10px 22px;
+  border-radius: 999px;
+  background: #ff5a4a;
+  color: #fff;
+  font: 800 clamp(20px, 4vw, 30px) / 1.1 inherit;
+  font-family: inherit;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+  animation: obs-latido 0.45s ease-in-out infinite alternate;
+  max-width: calc(100vw - 32px);
+  text-align: center;
+}
+.obs-aviso[hidden] { display: none; }
+@keyframes obs-latido {
+  from { transform: translateX(-50%) scale(1); }
+  to { transform: translateX(-50%) scale(1.08); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .obs-aviso { animation: none; }
+}

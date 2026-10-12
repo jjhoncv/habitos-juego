@@ -44,7 +44,22 @@ html:not(.toque) .tactil, html:not(.toque) .b-mapa, html:not(.toque) .solo-toque
 .accion-btn.listo { background: var(--menta); animation: listo 1.1s ease-in-out infinite; }
 @keyframes listo { 50% { box-shadow: 0 5px 0 var(--tinta), 0 0 0 9px rgba(242,166,35,.55); } }
 
-/* el cartelito "Usar · Cama" se puede tocar */
+/* ---------- botones Saltar y Agacharse: arriba y a la izquierda del botón Usar */
+.mov-btn {
+  position: fixed; width: 66px; height: 66px; border-radius: 50%; padding: 0;
+  display: grid; place-items: center; align-content: center; gap: 0;
+  font: 800 11px var(--f-display); color: var(--tinta); background: var(--papel);
+  border: 3px solid var(--tinta); box-shadow: 0 4px 0 var(--tinta);
+  touch-action: none; -webkit-user-select: none; user-select: none; cursor: pointer;
+}
+.mov-btn svg { width: 24px; height: 24px; fill: none; stroke: var(--tinta); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.mov-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--tinta); }
+.b-saltar { right: calc(32px + env(safe-area-inset-right, 0px)); bottom: calc(134px + env(safe-area-inset-bottom, 0px)); background: var(--sol); }
+.b-agachar { right: calc(124px + env(safe-area-inset-right, 0px)); bottom: calc(100px + env(safe-area-inset-bottom, 0px)); }
+.b-agachar.on { background: var(--menta); transform: translateY(3px); box-shadow: 0 1px 0 var(--tinta); }
+.en-partido .tactil .mov-btn, .sot-perro .b-agachar { display: none; }
+
+
 .toque .prompt { pointer-events: auto; cursor: pointer; padding: 6px 18px 6px 6px; }
 
 /* ---------- sonido, mapa y álbum: en fila al lado del botón Usar */
@@ -128,6 +143,10 @@ html:not(.toque) .tactil, html:not(.toque) .b-mapa, html:not(.toque) .solo-toque
   .toque .b-silbar { left: calc(158px + env(safe-area-inset-left, 0px)); }
   .toque .pl-base { width: 112px; height: 112px; }
   .toque .accion-btn { width: 84px; height: 84px; font-size: 18px; }
+  .toque .mov-btn { width: 58px; height: 58px; font-size: 10px; }
+  .toque .mov-btn svg { width: 20px; height: 20px; }
+  .toque .b-saltar { right: calc(30px + env(safe-area-inset-right, 0px)); bottom: calc(116px + env(safe-area-inset-bottom, 0px)); }
+  .toque .b-agachar { right: calc(110px + env(safe-area-inset-right, 0px)); bottom: calc(94px + env(safe-area-inset-bottom, 0px)); }
   .toque .b-sonido, .b-mapa { width: 46px; height: 46px; bottom: calc(26px + env(safe-area-inset-bottom, 0px)); }
   .toque .b-sonido { right: calc(114px + env(safe-area-inset-right, 0px)); }
   .b-mapa { right: calc(168px + env(safe-area-inset-right, 0px)); }
@@ -156,6 +175,10 @@ html:not(.toque) .tactil, html:not(.toque) .b-mapa, html:not(.toque) .solo-toque
   .b-mapa { bottom: calc(196px + env(safe-area-inset-bottom, 0px)); }
   .toque .b-album { right: calc(18px + env(safe-area-inset-right, 0px)); bottom: calc(262px + env(safe-area-inset-bottom, 0px)); }
   .toque .prompt, .toque .progreso { bottom: calc(330px + env(safe-area-inset-bottom, 0px)); }
+  /* Saltar y Agacharse en columna, entre la palanca y el botón Usar */
+  .toque .mov-btn { width: 60px; height: 60px; font-size: 10px; }
+  .toque .b-saltar { right: calc(124px + env(safe-area-inset-right, 0px)); bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+  .toque .b-agachar { right: calc(124px + env(safe-area-inset-right, 0px)); bottom: calc(22px + env(safe-area-inset-bottom, 0px)); }
   .toque .b-silbar { left: calc(26px + env(safe-area-inset-left, 0px)); bottom: calc(232px + env(safe-area-inset-bottom, 0px)); }
   .toque .mc-botones { grid-template-columns: repeat(3, 62px); grid-auto-rows: 54px; }
   .toque .marcador { top: auto; bottom: calc(196px + env(safe-area-inset-bottom, 0px)); }

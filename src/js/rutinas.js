@@ -3,7 +3,7 @@
    - Entre semana papá se va a trabajar de 8:00 a 18:00. El fin de semana se queda en casa.
    - Cuando cambia la hora, entran o salen caminando por la puerta. Se ven en el minimapa.
    - Si a las 16:00 tus juguetes siguen en el piso, mamá va a tu cuarto a recogerlos: se atrasa,
-     baja la confianza y la cena sale más tarde. */
+     baja la confianza y la cena sale más tarde. No te regaña en ese momento: lo conversan en la noche. */
 (function () {
   'use strict';
 
@@ -23,7 +23,7 @@
     cocinaCocina: { lugar: 'comedor', x: -3.0, z: -2.85, ry: PI, anim: 'cocinar', dice: 'Estoy cocinando. ¡Ya casi está!' },
     cocinaAyuda: { lugar: 'comedor', x: -1.5, z: -2.85, ry: PI, anim: 'cocinar', dice: 'Ayudo a mamá con la cena.' },
     jardinCasita: { lugar: 'jardin', x: 2.4, z: -1.4, ry: PI / 2, anim: 'agacharse', dice: 'Arreglando la casita del perro. ¡Quedará como nueva!' },
-    cuartoRecoge: { lugar: 'dormitorio', x: 0.8, z: 1.0, ry: 0, anim: 'agacharse', dice: '¡Otra vez tus juguetes en el piso! Los estoy guardando yo…' },
+    cuartoRecoge: { lugar: 'dormitorio', x: 0.8, z: 1.0, ry: 0, anim: 'agacharse', dice: 'Estoy ordenando un poquito tu cuarto.' },
     trabajo: { lugar: 'trabajo' },
   };
 

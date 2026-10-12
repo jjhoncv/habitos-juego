@@ -151,6 +151,8 @@
     const VOCES = {
       mama: { p: 1.25, r: 1.08, m: true }, abuela: { p: 1.05, r: 0.92, m: true }, profe: { p: 1.12, r: 0.96, m: true },
       papa: { p: 0.8, r: 1.0, h: true }, vendedor: { p: 0.95, r: 1.12, h: true }, nino: { p: 1.6, r: 1.15 }, nina: { p: 1.85, r: 1.12, m: true },
+      // la cachorrita cuando te explica: vocecita aguda, tierna y un poquito más lenta
+      perrita: { p: 2.0, r: 0.98, m: true }, perro: { p: 2.0, r: 0.98, m: true },
     };
     if (window.speechSynthesis) try { speechSynthesis.onvoiceschanged = elegirVoz; } catch (e) { /* nada */ }
     function tono(f, t0, dur, tipo, vol, dest, fFin) {
@@ -204,8 +206,11 @@
       voz: (t) => tono(300 + Math.random() * 200, t, 0.07, 'triangle', 0.08),
       tripa: (t) => { soplo(t, 0.8, { tipo: 'lowpass', f: 240, fFin: 80, q: 8, vol: 0.6 }); tono(75, t, 0.7, 'sawtooth', 0.08, null, 45); },
       timbre: (t) => { for (let i = 0; i < 12; i++) tono(i % 2 ? 1250 : 1500, t + i * 0.1, 0.09, 'square', 0.06); },
+      guauTierno: (t) => [0, 0.16].forEach((d, i) => { tono(1250 + i * 120, t + d, 0.09, 'triangle', 0.12, null, 980 + i * 100); soplo(t + d, 0.05, { tipo: 'bandpass', f: 2600, q: 3, vol: 0.06 }); }),
       silbato: (t) => { tono(1900, t, 0.22, 'sine', 0.13, null, 2500); tono(2500, t + 0.26, 0.34, 'sine', 0.13, null, 1800); },
       ladrido: (t) => [0, 0.17].forEach((d) => { tono(720, t + d, 0.1, 'sawtooth', 0.1, null, 420); soplo(t + d, 0.08, { tipo: 'bandpass', f: 1300, q: 2, vol: 0.16 }); }),
+      salto: (t) => { tono(330, t, 0.16, 'triangle', 0.13, null, 700); soplo(t, 0.06, { tipo: 'lowpass', f: 900, vol: 0.12 }); },
+      aterrizar: (t) => { tono(130, t, 0.1, 'sine', 0.28, null, 70); soplo(t, 0.09, { tipo: 'lowpass', f: 320, vol: 0.32 }); },
     };
     const BUCLES = {
       cepillo: { tipo: 'bandpass', f: 3200, q: 2, vol: 0.18, lfo: 11 },
@@ -353,9 +358,13 @@
     <span class="solo-tecla"><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> caminar</span>
     <span class="solo-tecla"><kbd>E</kbd> usar objeto</span>
     <span class="solo-tecla"><kbd>1</kbd>–<kbd>4</kbd> elegir</span>
+    <span class="solo-tecla"><kbd>Z</kbd> saltar</span>
+    <span class="solo-tecla"><kbd>X</kbd> agacharte (mantén)</span>
     <span class="solo-toque"><kbd data-t="Palanca">←</kbd> caminar</span>
     <span class="solo-toque"><kbd data-t="Usar">E</kbd> usar objeto</span>
-    <span class="solo-toque">Toca una opción para elegir</span>
+    <span class="solo-toque"><kbd data-t="Saltar">Z</kbd> saltar</span>
+    <span class="solo-toque"><kbd data-t="Agacharse">X</kbd> mantén para agacharte</span>
+<span class="solo-toque">Toca una opción para elegir</span>
     <span>Con sonido y voces: sube el volumen</span>
   </div>
   <div class="i-botones"><button class="btn" id="bEmpezar"></button>${NINO ? '<button class="btn sec" id="bEditar" type="button">Cambiar personaje</button>' : ''}</div>
@@ -408,6 +417,8 @@
 <div class="tactil" id="tactil" hidden>
   <div class="palanca" id="palanca" role="application" aria-label="Palanca: arrástrala para caminar"><i class="pl-base"></i><i class="pl-bola" id="plBola"></i></div>
   <button class="accion-btn" id="bAccion" type="button">Usar</button>
+  <button class="mov-btn b-saltar" id="bSaltar" type="button" aria-label="Saltar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V6M6 11l6-6 6 6"/></svg><span>Saltar</span></button>
+  <button class="mov-btn b-agachar" id="bAgachar" type="button" aria-label="Agacharse (mantén presionado)" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v13M6 13l6 6 6-6"/></svg><span>Agacharse</span></button>
 </div>`);
 
   // ---------------------------------------------------------------- three.js
@@ -646,6 +657,16 @@
         T.cy = Math.sin(t * 2) * 0.008; T.bdz = -0.05; T.biz = 0.05;
         if (P === jugador && (S.energia < 30 || S.animo < 35)) { T.cad = 0.14; T.mdx = T.mix = -0.14; T.cabx = 0.35; }
     }
+    if (P === jugador && !accion && !P.sentado && P.cuerpo.rotation.x === 0 && (P.anim === 'caminar' || P.anim === 'quieto')) {
+      if (salto.enAire) {
+        // en el aire: rodillas arriba y brazos al cielo
+        T.mdx = T.mix = -0.75; T.rdx = T.rix = 1.15; T.bdx = T.bix = -2.5; T.bdz = -0.3; T.biz = 0.3; T.cy = 0; T.cabx = -0.15; k = 16;
+      } else if (agachado) {
+        // agachado: caderas abajo, rodillas dobladas; al caminar da pasitos cortos
+        const c = P.anim === 'caminar' ? Math.sin(P.fase) * 0.22 : 0;
+        T.cad = 0.35; T.mdx = -1.2 + c; T.mix = -1.2 - c; T.rdx = T.rix = 1.7; T.bdx = T.bix = -0.7; T.bdz = 0.1; T.biz = -0.1; T.cy = -0.3; T.cabx = -0.25; k = 14;
+      }
+    }
     if (P.sentado) { T.mdx = T.mix = -PI / 2; T.rdx = T.rix = PI / 2; T.cy = 0.47 / P.escala - 0.92; T.cad = Math.min(T.cad, 0.1); }
     const f = 1 - Math.exp(-dt * k);
     const [bd, bi] = P.brazos, [md, mi] = P.muslos, [rd, ri] = P.rodillas;
@@ -791,6 +812,9 @@
     scene.background = new THREE.Color(o.cielo || '#252b48');
     const E = { scene, nombre, titulo, w, d, cols: [], inters: [], puertas: [], refrescos: [], updates: [], obstaculos: [], npcs: [], sonidos: [], alEntrar: null };
     E.solido = (x, z, ww, dd) => E.cols.push({ x1: x - ww / 2, x2: x + ww / 2, z1: z - dd / 2, z2: z + dd / 2 });
+    // algo a lo que te puedes subir saltando (cama, sofá, banca…): bloquea si estás abajo, te sostiene si caes encima
+    E.subibles = [];
+    E.subible = (x, z, ww, dd, alto, nombre) => { const c = { x1: x - ww / 2, x2: x + ww / 2, z1: z - dd / 2, z2: z + dd / 2, alto, nombre: nombre || null }; E.subibles.push(c); return c; };
     const hemi = new THREE.HemisphereLight(S.fase === 'tarde' ? '#ffe2c4' : '#fff4e0', '#5d5878', 0.72);
     scene.add(hemi);
     const sol = new THREE.DirectionalLight('#ffe0b5', 0.72);
@@ -936,7 +960,8 @@
     box(fMal, 0.9, 0.16, 0.8, cF, cx - 0.35, 0.7, -2.45, { ry: -0.5 });
     box(fMal, 0.08, 0.46, 0.9, cF, cx + 0.9, 0.38, -1.3, { rz: 0.15 });
     box(fMal, 0.6, 0.06, 0.5, '#f7f3ea', cx - 0.4, 0.6, -1.4, { ry: 0.8 });
-    E.solido(cx, cz - 0.05, 1.8, 2.6);
+    E.solido(cx, -3.38, 1.8, 0.16);   // la cabecera
+    E.subible(cx, cz + 0.05, 1.8, 2.4, 0.56, 'Cama');
     E.refrescos.push(() => {
       fBien.visible = S.f.cama; fMal.visible = !S.f.cama;
       almohada.rotation.y = S.f.cama ? 0 : 0.5; almohada.position.x = S.f.cama ? cx : cx + 0.3;
@@ -1583,9 +1608,8 @@
       E.alEntrar = () => {
         const f = S.f;
         let txt = `¡Buenos días, ${CFG.nombre}!`;
-        if (!f.vestido) txt = `¡${CFG.nombre}! ¿Todavía en pijama?`;
-        else if (!f.cama || !f.juguetes) txt = 'Buenos días. ¿Tendiste tu cama y guardaste tus juguetes?';
-        else if (!f.dientes) txt = 'Buenos días. ¿Te lavaste los dientes?';
+        // solo un saludo: mamá no te recuerda tus tareas (eso lo conversan en la noche)
+        if (!f.vestido || !f.cama || !f.juguetes || !f.dientes) txt = `¡Buenos días, ${CFG.nombre}! ¿Dormiste rico?`;
         else if (!f.mamaSaludo) { txt = gx('¡Qué ordenado, hijo! Así da gusto.', '¡Qué ordenada, hija! Así da gusto.'); cambiar({ confianza: 4, motivacion: 6 }); }
         f.mamaSaludo = true;
         setTimeout(() => decir(E.mama, txt, 3.5), 400);
@@ -1662,10 +1686,10 @@
     if (S.fase === 'manana' && !FINDE && !S.f.fueColegio && !S.f.falto && S.min >= 8 * 60 + 30) {
       S.f.falto = true;
       meta('colegio', false);
-      cambiar({ confianza: -10 });
       malHabito('Faltar al colegio');
-      anotar('No fuiste al colegio. Mamá se dio cuenta.', 'mal');
-      visitaMama([`${CFG.nombre}, ¿no fuiste al colegio?`, 'Hoy te quedas en casa, pero mañana vas. Así no vas a aprender nada.'], { esconder: false });
+      anotar('No fuiste al colegio: el bus se fue sin ti.', 'mal');
+      decir(P, 'Uy… el bus ya se fue.', 2.4);
+      // sin visita de mamá: la confianza baja y lo conversan en la noche (charlaNoche)
     }
     if (S.fase === 'manana' && S.min >= 13 * 60) mediodiaEnCasa();
     // de noche: el día termina cuando tú quieras, durmiendo en tu cama
@@ -2108,29 +2132,17 @@
       if (!f.juguetes) malas.push('tus juguetes siguen en el piso');
       if (!f.ropaSucia) malas.push('tu ropa sucia está tirada');
       if ((f.desayuno === 'bueno' || f.desayuno === 'rapido') && !f.platoLlevado) malas.push('dejaste tu plato en la mesa');
+      // mamá solo te saluda: lo que quedó pendiente en la mañana lo conversan en la noche (charlaNoche)
+      S.f.malasManana = malas;
       const lineas = [];
-      if (malas.length >= 2) {
-        S.f.mamaMolesta = true;
-        mama.anim = 'jarras';
-        lineas.push(`¡${CFG.nombre}! ¿Tú crees que esta casa es un hotel?`);
-        lineas.push(`En la mañana ${unir(malas)}.`);
-        if (S.nota != null && S.nota < 11) lineas.push(`Y encima la profesora me escribió: sacaste ${S.nota} en el examen.`);
-        if (S.f.tareaEntregada === 'no') lineas.push('¡Y otra vez sin tarea!');
-        lineas.push('Primero come algo. Después ordenas tu cuarto y haces la tarea. A las cinco reviso.');
-        cambiar({ animo: -12, motivacion: -10, confianza: -5 });
-        anotar(`Mamá te recibió molesta: ${unir(malas)}.`, 'mal');
-      } else if (malas.length === 1) {
-        lineas.push(`Hola, ${gx('hijo', 'hija')}. Solo te faltó algo: ${malas[0]}.`);
-        lineas.push('Almuerza y después lo arreglas. Y no te olvides de la tarea.');
-        anotar('Mamá te recordó una cosa que dejaste pendiente.', '');
-      } else {
-        mama.anim = 'saludar';
+      mama.anim = 'saludar';
+      if (!malas.length) {
         lineas.push(`¡Hola, ${gx('campeón', 'campeona')}! Dejaste todo ordenado en la mañana.`);
-        lineas.push(`Almuerza ${gx('tranquilo', 'tranquila')} y luego haces tu tarea. Si terminas, puedes jugar videojuegos.`);
         cambiar({ animo: 10, motivacion: 8, confianza: 5 });
         anotar('Mamá te recibió contenta: dejaste todo ordenado.', 'bien');
-      }
-      setTimeout(() => visitaMama(lineas, { pedidos: TAREAS_TARDE.map(([t]) => t), alTerminar: () => { mama.anim = S.f.mamaMolesta ? 'jarras' : 'quieto'; mostrarLista(); avisar('Primero almuerza: con hambre todo te cuesta más.'); } }), 1200);
+      } else lineas.push(`¡Hola, ${gx('hijo', 'hija')}! ¿Cómo te fue en el colegio?`);
+      lineas.push('Te guardé arroz con pollo en la mesa.');
+      setTimeout(() => visitaMama(lineas, { alTerminar: () => { mama.anim = 'quieto'; mostrarLista(); decir(P, '¡Qué hambre tengo!', 2.2); } }), 1200);
     };
   }
 
@@ -2173,6 +2185,7 @@
     [-1, 1].forEach((k) => box(sc, 0.25, 0.6, 0.9, '#4a78b5', -1.4 + k * 1.4, 0.4, 1.0));
     E.solido(-1.4, 1.45, 2.8, 0.3);
     [-1, 1].forEach((k) => E.solido(-1.4 + k * 1.4, 1.0, 0.3, 0.9));
+    E.subible(-1.4, 0.92, 2.5, 0.76, 0.45, 'Sofá');
     box(sc, 1.3, 0.38, 0.6, '#8a5a3b', -1.4, 0.19, -0.9);
     E.solido(-1.4, -0.9, 1.3, 0.6);
     const tablet = box(sc, 0.26, 0.02, 0.18, '#1d2340', -0.6, 0.47, 0.9, { ry: 0.4 });
@@ -2195,14 +2208,14 @@
         const tareaPend = S.fase === 'tarde' && !S.f.tareaTarde;
         return {
           titulo: 'La PS5', texto: temprano() ? 'Está ahí, apagada. "Solo una partida…", piensas. Pero el bus no espera.'
-            : tareaPend ? 'Todavía no haces la tarea. Mamá dijo: primero las obligaciones.' : 'Un rato de juego después de cumplir.',
+            : tareaPend ? 'Todavía no haces la tarea… "Solo una partida", piensas.' : 'Un rato de juego después de cumplir.',
           opciones: [{
-            texto: 'Jugar una partida', nota: temprano() ? 'Te diviertes, pero se te va el tiempo de la mañana.' : tareaPend ? 'Si mamá te ve, se va a enojar.' : 'Te lo ganaste.',
+            texto: 'Jugar una partida', nota: temprano() ? 'Te diviertes, pero se te va el tiempo de la mañana.' : tareaPend ? 'La tarea sigue esperando.' : 'Te lo ganaste.',
             min: 20, ef: { animo: 12, motivacion: temprano() || tareaPend ? -8 : 2, energia: -3 }, ps5: true, esfuerzo: false,
             pasos: [{ ruta: [[-1.4, 0.3], [-1.4, 0.95]], mira: [-1.4, -3.2], anim: 'esperar', sentado: true, dur: 4, min: 20, progreso: 'Jugando PS5' }],
             alTerminar: () => {
               if (temprano()) malHabito('Videojuegos antes del colegio');
-              else if (tareaPend) { malHabito('Jugar antes de la tarea'); cambiar({ confianza: -6 }); visitaMama([`¡${CFG.nombre}! ¿PS5 sin haber hecho la tarea?`, 'Apágala y ve a hacer tus cosas.']); }
+              else if (tareaPend) { malHabito('Jugar antes de la tarea'); S.f.ps5SinTarea = true; }   // mamá no viene a regañar: lo conversan en la noche
             },
           }],
         };
@@ -2269,6 +2282,10 @@
       flores.push(bola(sc, 0.09, c, -0.6 + i * 0.4, 0.5, -3.0));
     });
     E.solido(0.2, -3.0, 2.2, 0.7);
+    // banca de madera: te puedes subir saltando
+    box(sc, 1.2, 0.08, 0.45, '#a8744a', -1.65, 0.4, -3.0);
+    [-0.5, 0.5].forEach((k) => box(sc, 0.08, 0.38, 0.4, '#6b4a33', -1.65 + k, 0.19, -3.0));
+    E.subible(-1.65, -3.0, 1.2, 0.45, 0.44, 'Banca');
     E.refrescos.push(() => { tierra.material = mat(S.f.riego ? '#4e3524' : '#6b4a33'); flores.forEach((f) => f.scale.setScalar(S.f.riego ? 1.25 : 0.85)); });
     // escalera al techo
     const ex = 1.9, ez = -3.25;
@@ -2362,6 +2379,8 @@
     if (visita && !visita.avisado && visita.o.alTerminar && visita.fase !== 'esperando') { visita.avisado = true; visita.o.alTerminar(); }
     visita = null;
     if (escondido) { P.root.visible = true; escondido = null; }
+    soltarControl();
+    camaraPrimeraPersona(false);
     burbujas.forEach((b, el) => { el.hidden = true; });
     burbujas.clear();
     escena = CONSTRUIR[nombre]();
@@ -2376,6 +2395,7 @@
       P.root.rotation.y = escena.inicio.rot;
     }
     P.sentado = false;
+    P.root.position.y = 0; reiniciarSalto();
     agregarEscondites(escena);
     ganchos.construir.forEach((f) => f(nombre, escena, desde));
     refrescar();
@@ -2852,6 +2872,8 @@
         return;
       }
       const pos = P.root.position, dx = dest[0] - pos.x, dz = dest[1] - pos.z, d = Math.hypot(dx, dz);
+      if (salto.enAire || salto.sobre) reiniciarSalto();
+      if (pos.y > 0) pos.y = Math.max(0, pos.y - dt * 2.5);   // si estabas arriba de la cama o del sofá, te bajas
       if (d < 0.04) { pos.x = dest[0]; pos.z = dest[1]; a.ri++; return; }
       const v = velocidad();
       const st = Math.min(d, v * dt);
@@ -2937,7 +2959,110 @@
         if (m === pl) nx = c.x1 - r; else if (m === pr) nx = c.x2 + r; else if (m === pt) nz = c.z1 - r; else nz = c.z2 + r;
       }
     });
+    // lo que se puede subir: solo pasas si tus pies ya llegan casi arriba (saltando o estando encima)
+    const pie = root === P.root ? root.position.y : 0;
+    (escena.subibles || []).forEach((c) => {
+      if (pie >= c.alto - SUBE) return;
+      if (nx > c.x1 - r && nx < c.x2 + r && nz > c.z1 - r && nz < c.z2 + r) {
+        const pl = nx - (c.x1 - r), pr = (c.x2 + r) - nx, pt = nz - (c.z1 - r), pb = (c.z2 + r) - nz;
+        const m = Math.min(pl, pr, pt, pb);
+        if (m === pl) nx = c.x1 - r; else if (m === pr) nx = c.x2 + r; else if (m === pt) nz = c.z1 - r; else nz = c.z2 + r;
+      }
+    });
     root.position.x = nx; root.position.z = nz;
+  }
+
+  // ---------- saltar, subirse a las cosas y agacharse
+  // Un salto es un arco suave de ~0.55 s que sube ~45 cm. Si caes sobre algo subible (cama, sofá…) te quedas arriba.
+  const SALTO_V = 3.27, GRAVEDAD = 11.9, SUBE = 0.22;
+  const salto = { y: 0, vy: 0, enAire: false, sobre: null };
+  let agachado = false;
+  function sueloEn(x, z) {
+    let h = 0, s = null;
+    for (const c of (escena && escena.subibles) || []) if (x > c.x1 && x < c.x2 && z > c.z1 && z < c.z2 && c.alto > h) { h = c.alto; s = c; }
+    return [h, s];
+  }
+  function puedeMoverse() { return !primeraP && jugando && !cargando && !accion && !panelAbierto && !escondido && !levantando && !alarmaActiva && !examen && !cine && !vitrina && P.cuerpo.rotation.x === 0; }
+  function saltar() {
+    if (control) return jugando && !panelAbierto && !accion && control.o.alSaltar ? !!control.o.alSaltar() : false;
+    if (!puedeMoverse() || salto.enAire || bloqueos.has('futbol')) return false;
+    if (agachado) agacharse(false);
+    salto.enAire = true; salto.vy = SALTO_V; salto.sobre = null;
+    Sonido.sfx('salto');
+    evento('salto', {});
+    return true;
+  }
+  function agacharse(on) {
+    on = !!on && jugando && !bloqueos.has('futbol') && !escondido && !control && !primeraP;
+    if (on === agachado) return agachado;
+    agachado = on;
+    const b = $('#bAgachar');
+    if (b) { b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+    evento('agacho', { on });
+    return agachado;
+  }
+  function aterrizar(s) {
+    salto.enAire = false; salto.vy = 0; salto.sobre = s ? s.nombre : null;
+    Sonido.sfx('aterrizar');
+    evento('aterrizo', { sobre: salto.sobre });
+  }
+  // jugar como otro personaje (la cachorrita del sótano): A.controlar(obj, { vel, radio, alSaltar, alSalir }) / A.controlar(null)
+  let control = null;
+  function controlar(obj, o) {
+    if (!obj) { soltarControl(); return false; }
+    if (control) soltarControl();
+    if (escondido) salirEscondite();
+    if (agachado) agacharse(false);
+    control = { obj, o: o || {} };
+    P.anim = 'quieto';
+    evento('control', { on: true });
+    return true;
+  }
+  function soltarControl() {
+    if (!control) return;
+    const c = control;
+    control = null;
+    if (c.obj.anim === 'caminar') c.obj.anim = 'quieto';
+    evento('control', { on: false });
+    if (c.o.alSalir) { try { c.o.alSalir(); } catch (e) { console.error(e); } }
+  }
+  // cámara en primera persona: A.camaraPrimeraPersona(on, { mirar: [x,y,z] | {x,y,z} | () => …, alto, suave })
+  let primeraP = null;
+  function camaraPrimeraPersona(on, o) {
+    if (on) {
+      if (agachado) agacharse(false);
+      const ya = !!primeraP;
+      primeraP = { o: o || {} };
+      if (!ya) {
+        P.root.visible = false;
+        camera.fov = 60; camera.updateProjectionMatrix();
+        camaraDirecta = true;
+        evento('primeraPersona', { on: true });
+      }
+      return true;
+    }
+    if (!primeraP) return false;
+    primeraP = null;
+    P.root.visible = !escondido;
+    camera.fov = 42; camera.updateProjectionMatrix();
+    camaraDirecta = true;
+    evento('primeraPersona', { on: false });
+    return false;
+  }
+  function reiniciarSalto() { salto.enAire = false; salto.vy = 0; salto.sobre = null; salto.y = 0; }
+  function actualizarSalto(dt) {
+    const pos = P.root.position;
+    const [h, s] = sueloEn(pos.x, pos.z);
+    if (salto.enAire) {
+      salto.vy -= GRAVEDAD * dt;
+      pos.y += salto.vy * dt;
+      if (pos.y <= h) { pos.y = h; if (salto.vy <= 0) aterrizar(s); }
+    } else if (pos.y > h + 0.01) {
+      salto.enAire = true; salto.vy = 0; salto.sobre = null;   // te bajaste caminando: caes
+    } else if (h > pos.y && h - pos.y <= SUBE) {
+      pos.y = h; salto.sobre = s ? s.nombre : null;          // un escalón bajito: te subes caminando
+    } else if (!h && pos.y < 0) pos.y = 0;
+    salto.y = pos.y;
   }
   function revisarPuertas() {
     if (bloqueos.size) return false;   // en pleno partido o travesura no se sale del cuarto
@@ -2953,15 +3078,19 @@
   }
   function cercano() {
     let best = null, bd = 1e9;
+    // si juegas con otro personaje, se mide desde él y solo cuentan las cosas marcadas con it.control
+    const desde = control ? control.obj.root.position : P.root.position;
     for (const it of escena.inters) {
+      if (!!control !== (it.control === true)) continue;
       if (it.activo && !it.activo()) continue;
-      const dd = Math.hypot(P.root.position.x - it.en[0], P.root.position.z - it.en[1]);
+      const dd = Math.hypot(desde.x - it.en[0], desde.z - it.en[1]);
       if (dd < (it.radio || 1) && dd < bd) { bd = dd; best = it; }
     }
     return best;
   }
   function interactuar() {
     if (!jugando || accion || panelAbierto || cargando || levantando || alarmaActiva || examen) return;
+    if (escondido) { salirLibre(); return; }
     const it = cercano();
     if (it) abrirPanel(it.abrir(), it);
   }
@@ -3045,6 +3174,7 @@
     }
     recordarPedido(lineas, o);
     const escondible = NINO && o.esconder !== false && (escena.escondites || []).length && !tutorial && !alarmaActiva && S.fase !== 'colegio';
+    if (escondido && !escondible) salirEscondite();
     visita = { mama, lineas, o, fase: escondible ? 'pasos' : 'entrar', ruta: [dentro, destino], ri: 0, i: -1, t: 0, fuera, dentro, tPasos: 3.6, paso: 0 };
     if (escondible) {
       mama.root.visible = false;
@@ -3130,18 +3260,48 @@
   }
   // ---------- esconderse cuando viene mamá
   let escondido = null;
-  function esconderse(e) {
+  function esconderse(e, libre) {
+    if (agachado) agacharse(false);
+    reiniciarSalto();
     escondido = e;
     P.root.position.set(e.oculto[0], 0, e.oculto[1]);
     P.root.visible = false;
     P.anim = 'quieto';
-    avisar(`Estás ${e.nombre.toLowerCase()}. ¡Shhh! Que no te encuentre…`);
+    if (libre) avisar(`Estás ${e.nombre.toLowerCase()}. ¡Nadie te ve! Para salir, ${tactil ? 'toca Usar' : 'pulsa E o una flecha'}.`);
+    else avisar(`Estás ${e.nombre.toLowerCase()}. ¡Shhh! Que no te encuentre…`);
+    evento('escondido', { on: true, lugar: e.nombre });
   }
   function salirEscondite() {
     if (!escondido) return;
-    P.root.position.set(escondido.en[0], 0, escondido.en[1]);
+    const e = escondido;
+    P.root.position.set(e.en[0], 0, e.en[1]);
     P.root.visible = true;
     escondido = null;
+    evento('escondido', { on: false, lugar: e.nombre });
+  }
+  // salir cuando quieras (pero no mientras mamá te está buscando)
+  function salirLibre() {
+    if (!escondido) return false;
+    if (visita) { avisar('¡Shhh! Mamá está cerca. Espera un poquito.'); return false; }
+    salirEscondite();
+    Sonido.sfx('click');
+    return true;
+  }
+  // esconderse en cualquier momento: con el escondite (o su nombre); sin nada, el más cercano
+  function esconderPor(lugar) {
+    const lista = (escena && escena.escondites) || [];
+    if (!jugando || cargando || accion || panelAbierto || levantando || examen || escondido || !lista.length) return false;
+    if (visita && visita.fase !== 'pasos') return false;
+    let e = null;
+    if (lugar && typeof lugar === 'object') e = lista.find((x) => x === lugar || x.nombre === lugar.nombre);
+    else if (typeof lugar === 'string') e = lista.find((x) => x.nombre === lugar);
+    else {
+      const p = P.root.position;
+      e = lista.slice().sort((a, b) => Math.hypot(a.en[0] - p.x, a.en[1] - p.z) - Math.hypot(b.en[0] - p.x, b.en[1] - p.z))[0];
+    }
+    if (!e) return false;
+    esconderse(e, !visita);
+    return true;
   }
   function terminarBusqueda() {
     const v = visita;
@@ -3173,13 +3333,22 @@
   }
   function agregarEscondites(E) {
     (E.escondites || []).forEach((e) => {
-      E.inters.push(etiquetaInter(e.nombre, e.en, e.oculto, 1.2, {
-        activo: () => !!visita && visita.fase === 'pasos' && !escondido,
-        abrir: () => ({
+      // siempre puedes esconderte; cuando vienen los pasos de mamá, es para que no te encuentre
+      const conMama = () => !!visita && visita.fase === 'pasos';
+      const it = etiquetaInter(e.nombre, e.en, e.oculto, 1.2, {
+        escondite: e,
+        activo: () => !escondido && (!visita || visita.fase === 'pasos'),
+        abrir: () => (conMama() ? {
           titulo: '¡Escóndete!', texto: 'Mamá está por entrar. Si te encuentra, se va a enojar más.',
           opciones: [{ texto: e.nombre, nota: e.nota || '', min: 0, anim: 'agacharse', dur: 0.5, esfuerzo: false, progreso: 'Escondiéndote…', alTerminar: () => esconderse(e) }],
+        } : {
+          titulo: e.nombre, texto: '¡Un buen escondite! ¿Te escondes un ratito?',
+          opciones: [{ texto: 'Esconderte aquí', nota: e.nota || '', min: 0, anim: 'agacharse', dur: 0.5, esfuerzo: false, progreso: 'Escondiéndote…', alTerminar: () => esconderse(e, !visita) }],
         }),
-      }));
+      });
+      // sin mamá cerca, hay que estar más pegadito para que aparezca (así no tapa otras cosas)
+      Object.defineProperty(it, 'radio', { get: () => (conMama() ? 1.2 : 0.75) });
+      E.inters.push(it);
     });
   }
 
@@ -3272,10 +3441,123 @@
     }
   }
 
+  // ---------------------------------------------------------------- la charla de la noche
+  // Durante el día papá y mamá no te dicen qué hacer. Cuando te vas a dormir (o te quedas dormido tarde),
+  // antes del resumen entran a tu cuarto y conversan contigo: te dicen con cariño lo que no hiciste hoy,
+  // reconocen lo que sí hiciste y, si hiciste todo, te felicitan. Aquí también se aplican las consecuencias
+  // que antes llegaban en el día (la revisión del cuarto, faltar al colegio, la PS5 antes de la tarea…).
+  let charla = null;
+  function metasNoche() {
+    if (!NINO) return;
+    const ordenado = S.f.cama && S.f.juguetes && S.f.ropaSucia && S.f.zapatos;
+    meta('comer', !!S.f.desayuno && !!S.f.almorzo && !!S.f.ceno);
+    meta('cuarto', !!ordenado);
+    meta('dormir', !!S.f.durmio && !S.f.desvelo && S.min < 22 * 60);
+  }
+  const ordenadoPorTi = () => !!(S.f.cama && S.f.juguetes && S.f.ropaSucia && S.f.zapatos && !S.f.mamaRecogio);
+  function consecuenciasNoche() {
+    const f = S.f;
+    if (ordenadoPorTi()) { cambiar({ confianza: 10, animo: 8 }); anotar('Mamá vio tu cuarto ordenado y te felicitó.', 'bien'); }
+    else if (!(f.cama && f.juguetes && f.ropaSucia && f.zapatos)) { cambiar({ confianza: -6, animo: -4 }); anotar('Mamá vio que tu cuarto quedó desordenado.', 'mal'); }
+    if (f.falto) cambiar({ confianza: -10 });
+    if (f.ps5SinTarea) cambiar({ confianza: -6 });
+    const malas = f.malasManana || [];
+    if (malas.length >= 2) { f.mamaMolesta = true; cambiar({ confianza: -5 }); anotar(`Mamá notó que en la mañana ${unir(malas)}.`, 'mal'); }
+  }
+  function lineasNoche() {
+    const f = S.f, n = CFG.nombre, m = PERFIL && PERFIL.mascota ? PERFIL.mascota.nombre : 'tu cachorrita';
+    const dia = enCapitulo() ? diaDeHoy().dia : 0;
+    const ids = enCapitulo() ? window.Habitos.progreso.metas(PERFIL, dia).map(([id]) => id) : FINDE ? ['comer', 'dormir'] : ['colegio', 'comer', 'cuarto', 'dormir'];
+    const HECHO = { perro: !!f.perroComio, colegio: !!f.fueColegio, comer: !!f.desayuno && !!f.almorzo && !!f.ceno, cuarto: ordenadoPorTi(), dormir: !f.desvelo && S.min < 22 * 60, ayudar: !!f.riego, jugar: !!f.jugoPerro };
+    const ok = (id) => (id === 'cuarto' ? HECHO.cuarto : S.metas[id] !== undefined ? S.metas[id] === true : !!HECHO[id]);
+    const comidas = [!f.desayuno && 'el desayuno', !f.almorzo && 'el almuerzo', !f.ceno && 'la cena'].filter(Boolean);
+    const BIEN = { perro: `le diste de comer a ${m}`, colegio: 'fuiste al colegio', comer: 'comiste tus tres comidas', cuarto: 'dejaste tu cuarto ordenado', dormir: 'te vas a dormir a buena hora', ayudar: 'me ayudaste con las plantas', jugar: `jugaste fútbol con ${m}` };
+    const FALTA = {
+      colegio: 'no fuiste al colegio', perro: `${m} se quedó sin su comida de la mañana`,
+      comer: comidas.length ? `te saltaste ${unir(comidas)}` : 'casi no comiste',
+      cuarto: f.mamaRecogio ? 'tuve que guardar yo tus juguetes' : 'tu cuarto quedó desordenado',
+      dormir: f.desvelo ? `te quedaste ${gx('dormido', 'dormida')} muy tarde` : 'te estás acostando muy tarde',
+      ayudar: 'no regamos juntos las plantas', jugar: `${m} se quedó con ganas de jugar fútbol contigo`,
+    };
+    const bien = [], faltas = [];
+    ['colegio', 'perro', 'comer', 'cuarto', 'dormir', 'ayudar', 'jugar'].filter((id) => ids.includes(id)).forEach((id) => (ok(id) ? bien : faltas).push(ok(id) ? BIEN[id] : FALTA[id]));
+    // lo que no es meta pero también importa: la tarea y la vacuna del miércoles
+    if (!FINDE && S.fase === 'tarde') { if (f.tareaTarde) bien.push('hiciste tu tarea'); else faltas.push('no hiciste la tarea'); }
+    if (f.d3vet) bien.unshift(`llevaste a ${m} a su vacuna`);
+    if (f.d3perdio) faltas.splice(1, 0, `${m} se quedó sin su vacuna`);
+    const L = [];
+    if (!faltas.length) {
+      L.push(['mama', `${n}, hoy hiciste todo lo que te tocaba. ¡Estamos muy orgullosos de ti!`]);
+      if (bien.length) L.push(['papa', `Me gustó mucho que ${unir(bien.slice(0, 2))}.`]);
+      L.push(['mama', `Que descanses, mi ${gx('campeón', 'campeona')}. ¡Te queremos mucho!`]);
+    } else {
+      L.push(['mama', f.desvelo ? `${n}, te encontramos ${gx('dormido', 'dormida')}… Antes de dormir, conversemos un ratito.` : `${n}, antes de dormir, conversemos un ratito.`]);
+      L.push(['papa', bien.length ? `Hoy ${unir(bien.slice(0, 2))}. ¡Eso estuvo muy bien!` : 'Hoy fue un día difícil, ¿no?']);
+      L.push(['mama', `Pero hoy ${unir(faltas.slice(0, 3))}.`]);
+      L.push(['papa', 'Mañana es otro día y sé que lo puedes hacer mejor. ¡Te queremos mucho!']);
+    }
+    return { L, bien, faltas };
+  }
+  function charlaNoche(alFinal) {
+    metasNoche();
+    consecuenciasNoche();
+    const { L, faltas } = lineasNoche();
+    anotar(faltas.length ? 'Antes de dormir, papá y mamá conversaron contigo de lo que faltó hoy.' : 'Antes de dormir, papá y mamá te felicitaron: hiciste todo.', faltas.length ? '' : 'bien');
+    if (escondido) salirEscondite();
+    if (agachado) agacharse(false);
+    if (panelAbierto) cerrarPanel();
+    // papá y mamá entran y se quedan a tu lado (en tu cuarto, junto a tu cama)
+    const p = P.root.position;
+    let pm, pp, mira;
+    if (escena.nombre === 'dormitorio' && !S.f.desvelo) { acostar(); pm = [-1.35, -2.35]; pp = [-1.2, -1.25]; mira = [-2.5, -2.6]; }
+    else {
+      const d = Math.hypot(p.x, p.z), ux = d > 0.3 ? -p.x / d : 0, uz = d > 0.3 ? -p.z / d : 1;
+      pm = [p.x + ux * 1.1 - uz * 0.45, p.z + uz * 1.1 + ux * 0.45]; pp = [p.x + ux * 1.1 + uz * 0.45, p.z + uz * 1.1 - ux * 0.45]; mira = [p.x, p.z];
+      if (P.anim === 'caminar') P.anim = 'quieto';
+    }
+    escena.npcs.forEach((x) => { if (x.voz === 'mama' || x.voz === 'papa') x.root.visible = false; });   // nunca hay dos mamás
+    const mama = crearMama(), papa = crearPapa();
+    [[mama, pm], [papa, pp]].forEach(([q, [x, z]]) => {
+      q.root.position.set(x, 0, z); q.root.rotation.y = Math.atan2(mira[0] - x, mira[1] - z);
+      escena.scene.add(q.root); escena.npcs.push(q);
+    });
+    charla = { L, i: -1, alFinal, mama, papa, t: null };
+    abrirPanel({ titulo: 'Antes de dormir', texto: '', opciones: [] });
+    const bt = $('#pOpciones .op-t'); if (bt) bt.textContent = 'Buenas noches';
+    // si cierras el panel (Buenas noches, Escape), la charla termina y pasas al resumen
+    charla.vigila = setInterval(() => { if (charla && !panelAbierto) terminarCharla(); }, 250);
+    siguienteCharla();
+  }
+  function siguienteCharla() {
+    const c = charla;
+    if (!c) return;
+    c.i++;
+    if (c.i >= c.L.length) { c.t = setTimeout(terminarCharla, 900); return; }
+    const [q, txt] = c.L[c.i], quien = q === 'mama' ? c.mama : c.papa, seg = 1.6 + txt.length * 0.05;
+    decir(quien, txt, seg + 0.3);
+    quien.anim = 'saludar'; quien.t = 0;
+    setTimeout(() => { if (quien.anim === 'saludar') quien.anim = 'quieto'; }, 1500);
+    $('#pTexto').textContent = `${q === 'mama' ? 'Mamá' : 'Papá'}: "${txt}"`;
+    c.t = setTimeout(siguienteCharla, seg * 1000);
+  }
+  function terminarCharla() {
+    const c = charla;
+    if (!c) return;
+    charla = null;
+    clearTimeout(c.t); clearInterval(c.vigila);
+    if (panelAbierto) cerrarPanel();
+    c.alFinal();
+  }
+
   // ---------------------------------------------------------------- fin y resumen
   function fin(motivo) {
     if (!jugando) return;
     if (NINO && S.fase === 'manana') { if (FINDE) almuerzoFinde(); else irAlColegio(motivo); return; }
+    // antes del resumen, papá y mamá conversan contigo (una sola vez)
+    if (NINO && motivo === 'dia' && !S.f.charla && escena) {
+      S.f.charla = true;
+      try { charlaNoche(() => fin(motivo)); return; } catch (e) { console.error(e); charla = null; }
+    }
     jugando = false;
     Sonido.musica(false);
     Sonido.sfx(S.habitos.length >= S.malos.length + 3 ? 'final' : 'finalMal');
@@ -3303,12 +3585,7 @@
     h2[2].textContent = NINO ? 'El círculo de tu día' : 'Si repites este día';
     $('#resumen').hidden = false;
     $('#bOtra').focus({ preventScroll: true });
-    if (NINO) {
-      const ordenado = S.f.cama && S.f.juguetes && S.f.ropaSucia && S.f.zapatos;
-      meta('comer', !!S.f.desayuno && !!S.f.almorzo && !!S.f.ceno);
-      meta('cuarto', !!ordenado);
-      meta('dormir', !!S.f.durmio && !S.f.desvelo && S.min < 22 * 60);
-    }
+    metasNoche();
     if (enCapitulo() && window.Habitos.alTerminarDia) {
       const ids = window.Habitos.progreso.metas(PERFIL, diaDeHoy().dia).map(([id]) => id);
       const logradas = ids.filter((id) => S.metas[id] === true);
@@ -3542,6 +3819,19 @@
       camera.clearViewOffset();
       if (luzVitrina && luzVitrina.parent) luzVitrina.parent.remove(luzVitrina);
     }
+    if (primeraP) {
+      // primera persona: miras desde los ojos del personaje (por ejemplo, al borde de la piscina)
+      const o = primeraP.o, c = cabezaMundo(P).clone(), ry = P.root.rotation.y;
+      camPos.set(c.x + Math.sin(ry) * 0.12, c.y + (o.alto != null ? o.alto : 0.05), c.z + Math.cos(ry) * 0.12);
+      const m = typeof o.mirar === 'function' ? o.mirar() : o.mirar;
+      const objetivo = m ? (Array.isArray(m) ? new THREE.Vector3(m[0], m[1], m[2]) : new THREE.Vector3(m.x, m.y, m.z))
+        : new THREE.Vector3(camPos.x + Math.sin(ry) * 3, camPos.y - 0.4, camPos.z + Math.cos(ry) * 3);
+      if (camaraDirecta) { camMira.copy(objetivo); camaraDirecta = false; }
+      else camMira.lerp(objetivo, 1 - Math.exp(-dt * (o.suave || 3)));
+      camera.position.copy(camPos);
+      camera.lookAt(camMira);
+      return;
+    }
     if (primera) {
       const c = cabezaMundo(P);
       // al final levantas un poco la cabeza, como cuando te incorporas
@@ -3575,12 +3865,13 @@
       return;
     }
     const angosto = camera.aspect < 1;
-    const dist = (escena.nombre === 'pasillo' ? 6.2 : escena.nombre === 'bano' ? 5.6 : 7.0) * (angosto ? 1.45 : 1);
+    const dist = (escena.nombre === 'pasillo' ? 6.2 : escena.nombre === 'bano' ? 5.6 : 7.0) * (angosto ? 1.45 : 1) * (control ? 0.8 : 1);
     const lim = (v, a) => clamp(v, -a, a);
     // un módulo puede pedir encuadrar otro punto (por ejemplo, el arco durante el partido)
     const foco = enfoque ? enfoque() : null;
     const peso = foco && foco.peso != null ? foco.peso : 0.55;
-    const fx = foco ? lerp(p.x, foco.x, peso) : p.x, fz = foco ? lerp(p.z, foco.z, peso) : p.z;
+    const q = control ? control.obj.root.position : p;   // si juegas con la cachorrita, la cámara la sigue a ella
+    const fx = foco ? lerp(q.x, foco.x, peso) : q.x, fz = foco ? lerp(q.z, foco.z, peso) : q.z;
     const tx = lim(fx, Math.max(0, escena.w / 2 - (angosto ? 1.2 : 2.4) + (foco ? 1.6 : 0)));
     const tz = lim(fz, Math.max(0, escena.d / 2 - 1.5));
     const objetivo = new THREE.Vector3(tx, dist * 0.92, tz + dist * 0.88);
@@ -3649,33 +3940,24 @@
     if (m !== minutoLista) { minutoLista = m; resumenLista(); }
     if (quedan <= 10 && quedan > 0 && m !== minutoTic) { minutoTic = m; Sonido.sfx(quedan <= 5 ? 'latido' : 'tic'); }
   }
+  // durante el día papá y mamá NO vienen a decirte qué hacer: te das cuenta solo (la lista y tus propios
+  // pensamientos). Lo que no hiciste lo conversan contigo en la noche, al acostarte (charlaNoche).
   function recordatoriosMama() {
     if (!NINO || tutorial || bloqueos.size || visita || accion || panelAbierto || cargando || levantando || alarmaActiva || examen || mamaHabla()) return;
-    if (S.fase === 'colegio') return;
-    const pend = pendientes(), n = CFG.nombre;
-    // mamá aparece solo si algo importa: el bus, el hambre, el desorden, la hora de dormir
+    if (S.fase === 'colegio' || burbujas.size) return;
     if (S.fase === 'manana' && !FINDE && !S.f.fueColegio && !S.f.avisoBus && S.min >= CFG.limite - 10 && S.min < 8 * 60 + 30) {
       S.f.avisoBus = true;
-      visitaMama([`¡${n}! El bus pasa a las ${hora(CFG.limite).replace(/^0/, '')}. ¿Vas a ir al colegio?`].concat(pend.length > 2 ? [`Todavía te falta ${unir(pend.slice(0, 2))}.`] : []));
+      decir(P, `¡Uy! El bus pasa a las ${hora(CFG.limite).replace(/^0/, '')}…`, 2.6);
     } else if (S.fase === 'manana' && !S.f.desayuno && !S.f.avisoDesayuno && S.min >= (FINDE ? 8 * 60 : 7 * 60) && S.min < CFG.desayunoHasta && escena.nombre !== 'comedor') {
-      // el desayuno: mamá llama desde el comedor (no viene, solo se escucha)
       S.f.avisoDesayuno = true;
-      const t = `¡${n}! ¡El desayuno está servido en el comedor!`;
-      avisar(`Mamá desde el comedor: "${t}"`);
-      Sonido.hablar(t, 'mama');
+      decir(P, 'Mmm… algo huele rico en el comedor.', 2.6);
     } else if (S.comida < 15 && (S.f.avisoHambre || 0) < S.min - 120) {
       S.f.avisoHambre = S.min;
-      visitaMama([`${n}, ¡no has comido casi nada!`, 'Ve al comedor o saca una fruta de la refrigeradora.']);
-    } else if (S.fase === 'tarde' && !S.f.revision && S.min >= 17 * 60 && S.f.llegoCasa) {
-      S.f.revision = true;
-      const ok = !pend.length;
-      meta('cuarto', ok);
-      cambiar(ok ? { confianza: 10, animo: 8 } : { confianza: -6, animo: -4 });
-      anotar(ok ? 'Mamá vio tu cuarto ordenado y te felicitó.' : `Mamá vio que faltaba ${unir(pend.slice(0, 3))}.`, ok ? 'bien' : 'mal');
-      visitaMama(ok ? [`¡${n}! Tu cuarto está ordenado. ¡Así me gusta!`] : [`${n}, todavía falta ${unir(pend.slice(0, 3))}.`, 'Hazlo antes de la cena, ¿sí?']);
+      decir(P, 'Tengo hambre… mi barriga está sonando.', 2.6);
+      Sonido.sfx('tripa');
     } else if (S.fase === 'tarde' && !S.f.avisoDormir && S.min >= 20 * 60 + 30) {
       S.f.avisoDormir = true;
-      visitaMama([`${n}, ya es tarde.`, S.f.dientes ? 'A tu cama, que mañana hay que levantarse temprano.' : 'Lávate los dientes y a la cama, que mañana hay que levantarse temprano.']);
+      decir(P, 'Uaaah… ya me está dando sueño.', 2.6);
     }
   }
 
@@ -3692,10 +3974,25 @@
         let dx = (K.right ? 1 : 0) - (K.left ? 1 : 0), dz = (K.down ? 1 : 0) - (K.up ? 1 : 0), fuerza = 1;
         // con la palanca táctil: poquito = caminar despacio, hasta el borde = caminar normal
         if (K.jx || K.jz) { dx = K.jx; dz = K.jz; fuerza = Math.max(0.45, Math.min(1, Math.hypot(dx, dz))); }
-        if (dx || dz) {
+        if (primeraP) { dx = 0; dz = 0; }   // en primera persona no caminas
+        if (control) {
+          // juegas con otro personaje (la cachorrita): las flechas lo mueven a él; tú te quedas quieto
+          const Q = control.obj, o = control.o;
+          if (P.anim === 'caminar') P.anim = 'quieto';
+          if (dx || dz) {
+            const l = Math.hypot(dx, dz); dx /= l; dz /= l;
+            const v = (o.vel || 3.2) * fuerza * ((K.shift || modoCorrer) ? 1.5 : 1);
+            moverEn(Q.root, dx * v * dt, dz * v * dt, o.radio || 0.2);
+            let d = Math.atan2(dx, dz) - Q.root.rotation.y;
+            while (d > PI) d -= 2 * PI;
+            while (d < -PI) d += 2 * PI;
+            Q.root.rotation.y += d * Math.min(1, dt * 12);
+            Q.anim = 'caminar'; Q.vel = v;
+          } else if (Q.anim === 'caminar') Q.anim = 'quieto';
+        } else if (dx || dz) {
           const l = Math.hypot(dx, dz); dx /= l; dz /= l;
-          const corre = corriendo();
-          const v = velocidad() * fuerza * (corre ? 1.75 : 1);
+          const corre = corriendo() && !agachado;
+          const v = velocidad() * fuerza * (corre ? 1.75 : 1) * (agachado && !salto.enAire ? 0.5 : 1);
           if (corre) S.energia = Math.max(0, S.energia - dt * 0.12);   // correr cansa un poquito
           mover(dx * v * dt, dz * v * dt);
           girarHacia(dx, dz, dt);
@@ -3711,10 +4008,17 @@
         if (it && !accion && !cargando) { $('#promptTxt').textContent = rotulo(it); $('#prompt').hidden = false; }
         else $('#prompt').hidden = true;
         $('#bAccion').classList.toggle('listo', !!it && !accion);
+      } else if (escondido && !visita && !panelAbierto && !accion) {
+        // escondido por tu cuenta: el tiempo sigue y puedes salir cuando quieras
+        if (!(tutorial && tutorial.pausa) && !bloqueos.size) S.min += dt * RITMO;
+        $('#promptTxt').textContent = 'Salir del escondite'; $('#prompt').hidden = false;
+        $('#bAccion').classList.add('listo');
       } else {
         if (P.anim === 'caminar') P.anim = 'quieto';
         $('#prompt').hidden = true;
       }
+      if (bloqueos.has('futbol')) { if (agachado) agacharse(false); }
+      else if (!levantando && !accion && !examen && !escondido && !cine && !control) actualizarSalto(dt);
       // alarma del despertador (adulto)
       if (!NINO && alarmaActiva && panelAbierto && !accion) {
         alarmaT -= dt;
@@ -3861,10 +4165,18 @@
       } else if (e.code === 'Escape' && !alarmaActiva) cerrarPanel();
       return;
     }
-    if (MAPA[e.code]) { K[MAPA[e.code]] = true; e.preventDefault(); return; }
-    if (e.code === 'KeyE' || e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); if (accion) K.rapido = true; else interactuar(); }
+    if (MAPA[e.code]) { K[MAPA[e.code]] = true; e.preventDefault(); if (escondido && !e.repeat) salirLibre(); return; }
+    if (e.code === 'KeyE' || e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); if (accion) K.rapido = true; else interactuar(); return; }
+    // saltar (Z o J) y agacharse (X o C, mantener). En el partido, futbol.js usa estas teclas antes (alTecla).
+    if (e.code === 'KeyZ' || e.code === 'KeyJ') { e.preventDefault(); if (!e.repeat) { if (escondido) salirLibre(); else saltar(); } return; }
+    if (e.code === 'KeyX' || e.code === 'KeyC') { e.preventDefault(); if (!e.repeat) agacharse(true); }
   });
-  window.addEventListener('keyup', (e) => { if (MAPA[e.code]) K[MAPA[e.code]] = false; if (e.code === 'KeyE' || e.code === 'Space' || e.code === 'Enter') K.rapido = false; });
+  window.addEventListener('keyup', (e) => {
+    if (MAPA[e.code]) K[MAPA[e.code]] = false;
+    if (e.code === 'KeyE' || e.code === 'Space' || e.code === 'Enter') K.rapido = false;
+    if ((e.code === 'KeyX' || e.code === 'KeyC') && agachado) agacharse(false);
+  });
+  window.addEventListener('blur', () => { if (agachado) agacharse(false); });
   window.addEventListener('blur', () => Object.keys(K).forEach((k) => { K[k] = false; }));
 
   // ---------- controles táctiles (tablet y celular): palanca a la izquierda, botón Usar a la derecha.
@@ -3914,6 +4226,17 @@
   $('#bAccion').addEventListener('click', () => { if (!accion) interactuar(); });
   $('#bAccion').addEventListener('pointerdown', () => { if (accion) K.rapido = true; });
   ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => $('#bAccion').addEventListener(ev, () => { K.rapido = false; }));
+  // Saltar: un toque. Agacharse: mientras lo mantienes presionado.
+  const bSaltar = $('#bSaltar'), bAgachar = $('#bAgachar');
+  bSaltar.addEventListener('pointerdown', (e) => { e.preventDefault(); if (escondido) salirLibre(); else saltar(); });
+  bSaltar.addEventListener('click', (e) => e.preventDefault());
+  bAgachar.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    try { bAgachar.setPointerCapture(e.pointerId); } catch (err) { /* sin captura igual funciona */ }
+    agacharse(true);
+  });
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((ev) => bAgachar.addEventListener(ev, () => { if (agachado) agacharse(false); }));
+  [bSaltar, bAgachar].forEach((b) => b.addEventListener('contextmenu', (e) => e.preventDefault()));
 
   function empezar() {
     if (jugando) return;
@@ -4341,7 +4664,22 @@
     nuevaEscena, ventana, cuadro, arbol,
     diaDeHoy: () => diaDeHoy(),
     get corriendo() { return corriendo(); },
-    estado: () => ({ jugando, cargando, accion: !!accion, panel: !!panelAbierto, visita: !!visita, examen: !!examen, levantando: !!levantando, alarma: alarmaActiva, cine: !!cine, tutorial: !!tutorial, vitrina: !!vitrina, mamaHabla: mamaHabla(), fase: S.fase }),
+    // saltar, agacharse, subirse a las cosas y esconderse (ver PIZARRA, ronda 2)
+    saltar: () => saltar(),
+    agacharse: (on) => agacharse(on),
+    get salto() { return { y: P.root.position.y, enAire: salto.enAire, sobre: salto.sobre }; },
+    get agachado() { return agachado; },
+    get altura() { return cabezaMundo(P).y + 0.2 * P.escala; },   // hasta dónde llega tu cabeza (m); baja al agacharte
+    esconder: (lugar) => esconderPor(lugar),
+    salirEscondite: () => salirLibre(),
+    get escondido() { return escondido; },
+    escondites: () => ((escena && escena.escondites) || []).map((e) => ({ nombre: e.nombre, x: e.en[0], z: e.en[1], oculto: e.oculto.slice(), nota: e.nota || '' })),
+    subibles: () => ((escena && escena.subibles) || []).slice(),
+    controlar: (obj, o) => controlar(obj, o),
+    get controlado() { return control ? control.obj : null; },
+    camaraPrimeraPersona: (on, o) => camaraPrimeraPersona(on, o),
+    get primeraPersona() { return !!primeraP; },
+    estado: () => ({ jugando, cargando, accion: !!accion, panel: !!panelAbierto, visita: !!visita, examen: !!examen, levantando: !!levantando, alarma: alarmaActiva, cine: !!cine, tutorial: !!tutorial, vitrina: !!vitrina, mamaHabla: mamaHabla(), charla: !!charla, fase: S.fase }),
     alConstruir: (f) => ganchos.construir.push(f),
     alActualizar: (f) => ganchos.actualizar.push(f),
     alTecla: (f) => ganchos.tecla.push(f),
@@ -4357,7 +4695,7 @@
   };
 
   // gancho solo para las pruebas automáticas (tests/)
-  if (window.HABITOS_DEBUG) window.__T = { S, P, fin, irACasa, irA, visitaMama, dormir, get escondido() { return escondido; }, get flags() { return { cargando, panelAbierto, alarmaActiva, accion: !!accion, examen: !!examen, levantando: !!levantando, hablaEnComedor, jugando, cola: colaVisitas.length }; }, get escena() { return escena; }, get visita() { return visita; } };
+  if (window.HABITOS_DEBUG) window.__T = { S, P, fin, irACasa, irA, visitaMama, dormir, get escondido() { return escondido; }, get flags() { return { cargando, panelAbierto, alarmaActiva, accion: !!accion, examen: !!examen, levantando: !!levantando, hablaEnComedor, jugando, cola: colaVisitas.length }; }, get escena() { return escena; }, get visita() { return visita; }, get charla() { return charla; } };
 
   // ---------------------------------------------------------------- arranque
   construir('dormitorio', null);
