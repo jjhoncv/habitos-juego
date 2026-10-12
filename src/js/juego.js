@@ -978,6 +978,7 @@
 
     const puedeDormir = () => NINO && S.fase === 'tarde' && S.min >= 19 * 60;
     E.inters.push(etiquetaInter('Cama', [-1.2, -1.9], [cx, -1.9], 1.1, {
+      rotulo: () => (puedeDormir() ? `Dormir → ${manana()}` : null),
       activo: () => !S.f.cama || puedeDormir(),
       abrir: () => ({
         titulo: 'La cama', texto: puedeDormir() ? 'Ya es de noche. ¿Terminaste lo que querías hacer hoy?' : 'La frazada está tirada y la almohada en cualquier lado.',
@@ -986,7 +987,7 @@
           min: 5, ef: { animo: 6 }, anim: 'agacharse', dur: 2.6, progreso: 'Tendiendo la cama',
           alTerminar: () => { S.f.cama = true; habito('Tender la cama'); },
         }]).concat(puedeDormir() ? [{
-          texto: 'Dormir hasta mañana', nota: S.min >= 22 * 60 ? 'Ya es muy tarde: mañana vas a amanecer con sueño.' : 'Dormir a buena hora te da energía para mañana.',
+          texto: `Dormir hasta mañana (${manana()})`, nota: S.min >= 22 * 60 ? 'Ya es muy tarde: mañana vas a amanecer con sueño.' : 'Dormir a buena hora te da energía para mañana.',
           min: 0, anim: 'dormir', dur: 1.2, esfuerzo: false, progreso: 'Durmiendo…', alTerminar: () => dormir(),
         }] : []),
       }),
@@ -1667,6 +1668,12 @@
       visitaMama([`${CFG.nombre}, ¿no fuiste al colegio?`, 'Hoy te quedas en casa, pero mañana vas. Así no vas a aprender nada.'], { esconder: false });
     }
     if (S.fase === 'manana' && S.min >= 13 * 60) mediodiaEnCasa();
+    // de noche: el día termina cuando tú quieras, durmiendo en tu cama
+    if (NINO && S.fase === 'tarde' && S.min >= 19 * 60 && !S.f.avisoNoche) {
+      S.f.avisoNoche = true;
+      const sig = manana();
+      avisar(sig === 'fin de la semana' ? 'Ya es de noche. Cuando quieras, ve a dormir a tu cama: mañana papá decide si tu cachorrita se queda.' : `Ya es de noche. Cuando quieras, ve a dormir a tu cama y pasas al ${sig}.`);
+    }
     if (S.fase === 'tarde' && S.min >= 23 * 60 + 30 && !S.f.durmio) {
       // te quedaste despierto hasta muy tarde: te quedas dormido donde estés
       S.f.durmio = true; S.f.desvelo = true;
@@ -1686,6 +1693,11 @@
     S.f.llegoCasa = true;
     mostrarLista();
     avisar('Ya es mediodía: mamá sirvió el almuerzo en el comedor.');
+  }
+  // el día siguiente (para la cama y el aviso de la noche)
+  function manana() {
+    const pr = window.Habitos.progreso, dia = pr.cargar().dia;
+    return dia >= pr.DIAS ? 'fin de la semana' : pr.semana(dia + 1).nombre.toLowerCase();
   }
   function dormir() {
     if (S.f.durmio) return;

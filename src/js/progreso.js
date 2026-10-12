@@ -10,6 +10,17 @@
 
   // Metas de cada día del capítulo 1: [id, texto]
   const esFinde = (dia) => (dia - 1) % 7 >= 5;   // días 6 y 7: sábado y domingo
+  // la semana: cada día trae su sorpresa (ver src/js/dia2.js … dia7.js); {m} = nombre de la cachorrita
+  const SEMANA = [
+    { nombre: 'Lunes', sorpresa: 'Tu primer día con {m}: aprende a cuidarla.' },
+    { nombre: 'Martes', sorpresa: 'Llega un compañero nuevo al colegio. ¿Te harás su amigo?' },
+    { nombre: 'Miércoles', sorpresa: 'En la tarde a {m} le toca su vacuna en la veterinaria.' },
+    { nombre: 'Jueves', sorpresa: 'Va a llover todo el día… y en la noche se va la luz.' },
+    { nombre: 'Viernes', sorpresa: '¡Feria del colegio! Presentas el trabajo que preparaste en casa.' },
+    { nombre: 'Sábado', sorpresa: 'Papá quiere llevarte al parque con {m}.' },
+    { nombre: 'Domingo', sorpresa: 'La abuela viene a almorzar y lee tu diario de la semana.' },
+  ];
+  const semana = (dia, m) => { const d = SEMANA[(dia - 1) % 7]; return { nombre: d.nombre, sorpresa: d.sorpresa.split('{m}').join(m || 'tu cachorrita') }; };
   function metas(perfil, dia) {
     const m = perfil && perfil.mascota ? perfil.mascota.nombre : 'tu cachorro';
     if (dia && esFinde(dia)) return [
@@ -63,6 +74,6 @@
   function repetirSemana() { return guardar({ dia: 1, diario: [] }); }
 
   window.Habitos = Object.assign(window.Habitos || {}, {
-    progreso: { cargar, guardar, reiniciar, metas, esFinde, estrellasDe, terminarDia, totalEstrellas, repetirSemana, DIAS, PARA_GANAR },
+    progreso: { cargar, guardar, reiniciar, metas, esFinde, semana, estrellasDe, terminarDia, totalEstrellas, repetirSemana, DIAS, PARA_GANAR },
   });
 })();

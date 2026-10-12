@@ -122,6 +122,10 @@
         <span>Día ${dia}</span><i>${[0, 1, 2].map((k) => `<b class="${k < est ? 'llena' : ''}">${ESTRELLA}</b>`).join('')}</i></div>`;
     }).join('');
     $('#capHoy').textContent = `Hoy · Día ${pr.dia}`;
+    // qué trae hoy
+    let sorpresa = $('#capSorpresa');
+    if (!sorpresa) { sorpresa = document.createElement('p'); sorpresa.id = 'capSorpresa'; sorpresa.className = 'cap-sorpresa'; $('#capHoy').after(sorpresa); }
+    if (pr.dia <= DIAS) { const s = progreso.semana(pr.dia, m); $('#capHoy').textContent = `Hoy · Día ${pr.dia} · ${s.nombre}`; sorpresa.innerHTML = `<b>Hoy:</b> ${s.sorpresa}`; sorpresa.hidden = false; } else sorpresa.hidden = true;
     $('#capMetas').innerHTML = progreso.metas(p, pr.dia).map(([k, t]) => `<li data-meta="${k}">${t}</li>`).join('')
       + '<li class="nota-estrellas">4 o 5 metas = 3 estrellas · 3 metas = 2 · 2 metas = 1</li>';
     if (pr.dia > DIAS) { finDeSemana(p, pr); return; }
@@ -146,6 +150,12 @@
     $('#capHoy').textContent = 'Tu semana';
     $('#capMetas').innerHTML = '';
     $('#capEmpezar').textContent = gano ? 'Jugar la semana otra vez' : 'Intentar otra semana';
+    $('#capMundo').innerHTML = '';
+    $('#capHistoria').hidden = true;
+    const ctl = $('#capitulo .controles'); if (ctl) ctl.hidden = true;
+    // antes faltaba mostrar la tarjeta: el juego quedaba en negro después del domingo
+    $('#capitulo').hidden = false;
+    $('#capEmpezar').focus();
     if (gano) motor.sfx('logro');
   }
 
@@ -161,6 +171,7 @@
     caja.innerHTML = `<h2>Diario · Día ${dia} de ${DIAS}</h2>
       <div class="r-estrellas" role="img" aria-label="${estrellas} de 3 estrellas">${[0, 1, 2].map((k) => `<span class="${k < estrellas ? 'llena' : ''}">${ESTRELLA_G}</span>`).join('')}</div>
       <ul class="r-metas">${metas.map(([id, t]) => `<li class="${logradas.includes(id) ? 'si' : ''}">${t}</li>`).join('')}</ul>
+      ${sig <= DIAS ? `<p class="r-manana"><b>Mañana, ${progreso.semana(sig, p.mascota.nombre).nombre.toLowerCase()}:</b> ${progreso.semana(sig, p.mascota.nombre).sorpresa}</p>` : `<p class="r-manana"><b>Mañana:</b> papá decide si ${p.mascota.nombre} se queda.</p>`}
       <p class="r-semana">Llevas ${progreso.totalEstrellas(pr) + estrellas} ${progreso.totalEstrellas(pr) + estrellas === 1 ? 'estrella' : 'estrellas'} en la semana. Para que ${p.mascota.nombre} se quede necesitas ${progreso.PARA_GANAR} de ${DIAS * 3}.</p>
       <div class="i-botones"><button class="btn" type="button" id="rSeguir">${sig > DIAS ? 'Ver cómo terminó la semana' : `Guardar en el diario y seguir al día ${sig}`}</button><button class="btn sec" type="button" id="rRepetir">Repetir el día ${dia}</button></div>`;
     $('#bOtra').hidden = true;

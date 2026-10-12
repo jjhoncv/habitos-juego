@@ -155,3 +155,6 @@
 .ojos-reloj b { font: 54px/1 var(--f-reloj); color: #ff4d3d; text-shadow: 0 0 14px rgba(255,77,61,.6); }
 .ojos-reloj span { font: 800 17px var(--f-display); color: var(--papel); }
 @media (prefers-reduced-motion: reduce) { .ojos.parpadea, .ojos.parpadea .parpado { animation-duration: .01s; } }
+/* qué trae cada día (en la tarjeta y en el resumen) */
+.cap-sorpresa, .r-manana { margin: -2px 0 10px; padding: 8px 12px; border-radius: 10px; background: #fff4cc; border: 2px solid var(--sol); font-weight: 700; line-height: 1.35; }
+.cap-sorpresa b, .r-manana b { font-family: var(--f-display); }
