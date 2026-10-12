@@ -120,8 +120,41 @@
     let ctx = null, master, sfx, musica, ruido, activo = true, voz = null, timer = null, paso = 0, sigT = 0, urg = 0;
     try { activo = localStorage.getItem('habitos-sonido') !== '0'; } catch (e) { /* sin almacenamiento */ }
     const mtof = (n) => 440 * Math.pow(2, (n - 69) / 12);
+    // iPad/iPhone: el sonido solo se activa dentro de un toque, y en modo silencio Safari apaga el audio
+    // de la página. Pedimos sesión de "reproducción" (como un video) para que suene igual.
+    function sesionReproduccion() {
+      try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { /* Safari viejo */ }
+    }
+    let desbloqueado = false;
+    function desbloquear() {
+      sesionReproduccion();
+      iniciar();
+      if (!ctx) return;
+      try { if (ctx.state !== 'running') ctx.resume(); } catch (e) { /* nada */ }
+      // un sonido vacío dentro del toque deja el audio encendido en iOS
+      try { const b = ctx.createBuffer(1, 1, 22050), s0 = ctx.createBufferSource(); s0.buffer = b; s0.connect(ctx.destination); s0.start(0); } catch (e) { /* nada */ }
+      // en iOS sin audioSession, un <audio> en silencio pasa el sonido a modo "reproducción" (suena aunque esté en silencio)
+      if (!navigator.audioSession && !desbloquear.el) {
+        try {
+          const el = document.createElement('audio');
+          el.setAttribute('playsinline', ''); el.loop = true; el.volume = 0.01;
+          el.src = 'data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==';
+          el.play().catch(() => {});
+          desbloquear.el = el;
+        } catch (e) { /* nada */ }
+      }
+      // las voces también necesitan un primer "hablar" dentro de un toque
+      if (!desbloqueado && window.speechSynthesis) {
+        try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } catch (e) { /* nada */ }
+      }
+      desbloqueado = ctx.state === 'running';
+    }
+    ['pointerdown', 'touchend', 'keydown', 'click'].forEach((ev) => window.addEventListener(ev, () => { if (!desbloqueado || (ctx && ctx.state !== 'running')) desbloquear(); }, { capture: true, passive: true }));
+    // al volver a la app (iOS suspende el audio al salir)
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && ctx && ctx.state !== 'running') { desbloqueado = false; try { ctx.resume(); } catch (e) { /* nada */ } } });
     function iniciar() {
-      if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
+      sesionReproduccion();
+      if (ctx) { if (ctx.state === 'suspended' || ctx.state === 'interrupted') ctx.resume(); return; }
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return;
       ctx = new AC();
