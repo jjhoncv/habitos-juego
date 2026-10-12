@@ -1,0 +1,162 @@
+/* Controles táctiles (iPad, iPhone, Android): se activan con la clase .toque en <html> al tocar la pantalla.
+   Palanca abajo a la izquierda, botón Usar abajo a la derecha y, a su lado, sonido, mapa y álbum. */
+html:not(.toque) .tactil, html:not(.toque) .b-mapa, html:not(.toque) .solo-toque, html.toque .solo-tecla { display: none !important; }
+.toque body { -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; touch-action: manipulation; }
+.toque input, .toque textarea { -webkit-user-select: text; user-select: text; }
+
+/* las teclas se cambian por el nombre del botón (o se esconden) */
+.toque kbd:not([data-t]) { display: none; }
+.toque kbd[data-t] { font-size: 0; min-width: 0; padding: 0 10px; }
+.toque kbd[data-t]::after { content: attr(data-t); font: 800 13px var(--f-display); letter-spacing: .02em; }
+.toque .op, .toque .op.cerrar { grid-template-columns: 1fr; padding: 12px 14px; }
+.toque .op-t { font-size: 16px; }
+.toque .mc-botones small, .toque .m-ayuda { display: none; }
+
+/* ---------- palanca */
+.tactil { position: fixed; z-index: 6; inset: auto 0 0 0; height: 0; }
+.palanca {
+  position: fixed; left: calc(10px + env(safe-area-inset-left, 0px)); bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  width: 160px; height: 160px; display: grid; place-items: center;
+  touch-action: none; -webkit-user-select: none; user-select: none;
+}
+.pl-base {
+  grid-area: 1 / 1; width: 124px; height: 124px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,247,236,.35) 0 38%, rgba(255,247,236,.55) 39% 100%);
+  border: 3px solid rgba(29,35,64,.75); box-shadow: 3px 3px 0 rgba(29,35,64,.35);
+}
+.pl-bola {
+  grid-area: 1 / 1; width: 58px; height: 58px; border-radius: 50%;
+  background: var(--papel); border: 3px solid var(--tinta); box-shadow: 0 3px 0 var(--tinta);
+  transition: transform .12s ease-out;
+}
+.palanca.activa .pl-bola { transition: none; background: var(--sol); }
+.palanca.activa .pl-base { background: radial-gradient(circle, rgba(255,247,236,.5) 0 38%, rgba(255,247,236,.75) 39% 100%); }
+
+/* ---------- botón Usar */
+.accion-btn {
+  position: fixed; right: calc(18px + env(safe-area-inset-right, 0px)); bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+  width: 96px; height: 96px; border-radius: 50%;
+  font: 800 20px var(--f-display); color: var(--papel); background: var(--coral);
+  border: 3px solid var(--tinta); box-shadow: 0 5px 0 var(--tinta);
+  touch-action: none; -webkit-user-select: none; user-select: none; cursor: pointer;
+}
+.accion-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--tinta); }
+.accion-btn.listo { background: var(--menta); animation: listo 1.1s ease-in-out infinite; }
+@keyframes listo { 50% { box-shadow: 0 5px 0 var(--tinta), 0 0 0 9px rgba(242,166,35,.55); } }
+
+/* el cartelito "Usar · Cama" se puede tocar */
+.toque .prompt { pointer-events: auto; cursor: pointer; padding: 6px 18px 6px 6px; }
+
+/* ---------- sonido, mapa y álbum: en fila al lado del botón Usar */
+.toque .b-sonido, .b-mapa {
+  position: fixed; z-index: 6; left: auto; bottom: calc(34px + env(safe-area-inset-bottom, 0px));
+  width: 54px; height: 54px; border-radius: 50%; box-shadow: 0 3px 0 var(--tinta);
+}
+.toque .b-sonido { right: calc(130px + env(safe-area-inset-right, 0px)); }
+.b-mapa {
+  right: calc(194px + env(safe-area-inset-right, 0px));
+  display: grid; place-items: center; align-content: center; gap: 0; padding: 0; cursor: pointer;
+  background: var(--papel); color: var(--tinta); border: 2px solid var(--tinta);
+  font: 800 10px var(--f-display);
+}
+.b-mapa svg { width: 22px; height: 22px; fill: none; stroke: var(--tinta); stroke-width: 2; stroke-linejoin: round; }
+.toque .b-album { left: auto; right: calc(258px + env(safe-area-inset-right, 0px)); bottom: calc(38px + env(safe-area-inset-bottom, 0px)); padding: 9px 14px; z-index: 6; }
+.toque .mapa:not(.grande) { display: none !important; }
+.toque .mapa.grande { z-index: 44; }
+
+/* el botón Correr queda arriba de la palanca */
+.toque .b-correr { right: auto; left: calc(26px + env(safe-area-inset-left, 0px)); bottom: calc(178px + env(safe-area-inset-bottom, 0px)); padding: 9px 14px 9px 10px; font-size: 16px; }
+.toque .b-correr kbd, .toque .b-silbar kbd { display: none; }
+.toque .b-silbar { right: auto; left: calc(172px + env(safe-area-inset-left, 0px)); bottom: calc(178px + env(safe-area-inset-bottom, 0px)); padding: 9px 14px 9px 10px; font-size: 16px; }
+
+/* ---------- lo demás del HUD se acomoda alrededor */
+.toque .lugar { left: calc(178px + env(safe-area-inset-left, 0px)); bottom: calc(30px + env(safe-area-inset-bottom, 0px)); }
+.toque .crecer-hud { right: auto; left: calc(16px + env(safe-area-inset-left, 0px)); bottom: calc(240px + env(safe-area-inset-bottom, 0px)); width: 230px; }
+.toque .panel { z-index: 8; }
+.toque .l-tit { cursor: pointer; }
+.toque .lista { pointer-events: auto; }
+.toque .lista .l-tit::after { content: '▴'; margin-left: 6px; font-family: var(--f-texto); }
+.toque .lista.plegada .l-tit { margin: 0; }
+.toque .lista.plegada .l-tit::after { content: '▾'; }
+.toque .lista.plegada ul, .toque .lista.plegada .l-res { display: none; }
+
+/* ---------- fútbol: los botones del partido a la derecha, en dos filas */
+.en-partido .tactil .accion-btn, .toque .en-partido .b-sonido, .toque .en-partido .b-mapa, .toque .en-partido .b-album, .toque .en-partido .lugar { display: none; }
+.toque .mc-botones {
+  left: auto; right: calc(14px + env(safe-area-inset-right, 0px)); bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  display: grid; grid-template-columns: repeat(3, 72px); grid-auto-rows: 58px; gap: 8px; justify-content: end;
+}
+.toque .mc-botones button { min-width: 0; min-height: 0; padding: 4px; font-size: 15px; }
+.toque .mc-botones button[data-b="patear"] { grid-column: span 2; font-size: 20px; }
+.toque .mc-controles { display: none; }
+
+/* ---------- celular: las barras de energía, comida… más chiquitas */
+@media (max-height: 500px), (max-width: 600px) {
+  .toque .stats { gap: 3px; padding: 5px 7px; }
+  .toque .stat { grid-template-columns: 20px 1fr; gap: 6px; }
+  .toque .stat .ico { width: 20px; height: 20px; border-width: 1.5px; box-shadow: none; }
+  .toque .stat .ico svg { width: 11px; height: 11px; }
+  .toque .s-n { font-size: 11px; }
+  .toque .s-estado { display: none; }
+  .toque .s-v { font-size: 12px; }
+  .toque .s-barra { height: 6px; margin-top: 1px; border-width: 1px; }
+  .toque .logros-fila { font-size: 10px; padding-top: 3px; }
+  .toque .logros-fila b { font-size: 13px; }
+  .toque .logros-fila svg { width: 13px; height: 13px; }
+}
+
+/* ---------- celular acostado (poca altura) */
+@media (max-height: 500px) {
+  .toque .tiempo { top: calc(6px + env(safe-area-inset-top, 0px)); left: calc(10px + env(safe-area-inset-left, 0px)); width: min(330px, calc(100vw - 220px)); padding: 4px 10px 7px; }
+  .toque .t-hora { font-size: 20px; }
+  .toque .t-txt { font-size: 12px; }
+  .toque .t-txt b { font-size: 15px; }
+  .toque .t-barra { height: 10px; margin-top: 3px; }
+  .toque .stats { top: calc(6px + env(safe-area-inset-top, 0px)); right: calc(10px + env(safe-area-inset-right, 0px)); width: 168px; padding: 5px 7px; gap: 3px; }
+  .toque .en-partido .tiempo { display: none; }
+  /* con agua y baño son 9 barras: en dos columnas para que no tapen el botón Usar */
+  .toque .stats { grid-template-columns: 1fr 1fr; width: 272px; column-gap: 8px; }
+  .toque .stats .logros-fila, .toque .stats .dinero { grid-column: 1 / -1; }
+  .toque .lista { top: calc(64px + env(safe-area-inset-top, 0px)); left: calc(10px + env(safe-area-inset-left, 0px)); width: 230px; padding: 5px 10px; max-height: calc(100% - 250px); overflow-y: auto; }
+  .toque .l-tit { font-size: 13px; }
+  .toque .lista li { font-size: 11.5px; }
+  .toque .l-t small { display: none; }
+  .toque .aviso { top: calc(58px + env(safe-area-inset-top, 0px)); }
+  .toque .crecer-hud, .toque .lugar { display: none; }
+  .toque .palanca { width: 140px; height: 140px; }
+  .toque .b-correr, .toque .b-silbar { bottom: calc(150px + env(safe-area-inset-bottom, 0px)); left: calc(18px + env(safe-area-inset-left, 0px)); padding: 5px 10px 5px 6px; font-size: 14px; }
+  .toque .b-silbar { left: calc(158px + env(safe-area-inset-left, 0px)); }
+  .toque .pl-base { width: 112px; height: 112px; }
+  .toque .accion-btn { width: 84px; height: 84px; font-size: 18px; }
+  .toque .b-sonido, .b-mapa { width: 46px; height: 46px; bottom: calc(26px + env(safe-area-inset-bottom, 0px)); }
+  .toque .b-sonido { right: calc(114px + env(safe-area-inset-right, 0px)); }
+  .b-mapa { right: calc(168px + env(safe-area-inset-right, 0px)); }
+  .toque .b-album { right: calc(222px + env(safe-area-inset-right, 0px)); bottom: calc(28px + env(safe-area-inset-bottom, 0px)); padding: 6px 12px; }
+  .toque .prompt, .toque .progreso { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+  .toque .panel { bottom: calc(8px + env(safe-area-inset-bottom, 0px)); max-height: calc(100% - 16px); padding: 10px 12px 12px; }
+  .toque .panel h2 { font-size: 19px; }
+  .toque .panel p { margin: 2px 0 8px; font-size: 13px; }
+  .toque .op { padding: 8px 12px; }
+  .toque .op-t { font-size: 14px; }
+  .toque .mc-botones { grid-template-columns: repeat(3, 64px); grid-auto-rows: 50px; gap: 6px; }
+  .toque .marcador { top: calc(6px + env(safe-area-inset-top, 0px)); bottom: auto; min-width: 0; padding: 4px 12px; }
+  .toque .marcador .mc-eq b { font-size: 24px; }
+  .toque .mc-ayuda { display: none; }
+}
+
+/* ---------- celular parado (poco ancho) */
+@media (max-width: 600px) {
+  .toque .crecer-hud, .toque .lugar { display: none; }
+  .toque .stats { right: 10px; width: 158px; }
+  .toque .lista { left: 10px; width: 196px; max-height: calc(100% - 330px); overflow-y: auto; }
+  .toque .l-tit { font-size: 13px; }
+  /* sonido, mapa y álbum suben en columna sobre el botón Usar */
+  .toque .b-sonido, .b-mapa { right: calc(38px + env(safe-area-inset-right, 0px)); }
+  .toque .b-sonido { bottom: calc(132px + env(safe-area-inset-bottom, 0px)); }
+  .b-mapa { bottom: calc(196px + env(safe-area-inset-bottom, 0px)); }
+  .toque .b-album { right: calc(18px + env(safe-area-inset-right, 0px)); bottom: calc(262px + env(safe-area-inset-bottom, 0px)); }
+  .toque .prompt, .toque .progreso { bottom: calc(330px + env(safe-area-inset-bottom, 0px)); }
+  .toque .b-silbar { left: calc(26px + env(safe-area-inset-left, 0px)); bottom: calc(232px + env(safe-area-inset-bottom, 0px)); }
+  .toque .mc-botones { grid-template-columns: repeat(3, 62px); grid-auto-rows: 54px; }
+  .toque .marcador { top: auto; bottom: calc(196px + env(safe-area-inset-bottom, 0px)); }
+}

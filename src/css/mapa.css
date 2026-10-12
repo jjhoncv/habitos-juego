@@ -1,0 +1,31 @@
+/* Minimapa de la casa (abajo a la izquierda, sobre el nombre del lugar). Con M se agranda al centro. */
+.mapa {
+  position: fixed; z-index: 5; left: 16px; bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+  width: 250px; padding: 6px 6px 2px; cursor: zoom-in;
+  background: rgba(255,247,236,.92); border: 2px solid var(--tinta); border-radius: 12px; box-shadow: var(--sombra);
+  font: inherit; color: inherit;
+}
+.mapa svg { display: block; width: 100%; height: auto; }
+.mapa.grande {
+  left: 50%; top: 50%; bottom: auto; width: min(760px, calc(100% - 32px)); transform: translate(-50%, -50%);
+  z-index: 44; cursor: zoom-out; padding: 14px 14px 6px;
+}
+.m-ayuda { display: block; text-align: right; font-size: 10px; font-weight: 800; color: var(--tinta-2); letter-spacing: .08em; }
+.m-cuarto rect { fill: #fff; stroke: var(--tinta); stroke-width: .12; }
+.m-cuarto.ext rect { fill: #cfe8c4; }
+.m-cuarto.techo rect { fill: #e6eef7; stroke-dasharray: .35 .25; }
+.m-cuarto text { font: 800 .78px var(--f-texto); fill: var(--tinta-2); text-anchor: middle; }
+.m-cuarto.aqui rect { fill: var(--sol); }
+.m-cuarto.aqui text { fill: var(--tinta); }
+.m-puerta { fill: #8a5a3b; }
+.m-escalera, .m-salida path { fill: none; stroke: var(--tinta); stroke-width: .14; stroke-linecap: round; }
+.m-salida text { font: 800 .6px var(--f-texto); fill: var(--coral); text-anchor: middle; }
+.m-yo circle { fill: var(--coral); stroke: #fff; stroke-width: .14; }
+.m-yo path { fill: var(--coral); }
+.m-perro circle { fill: #c98a4b; stroke: var(--tinta); stroke-width: .1; }
+@media (max-width: 760px) {
+  .mapa { width: 170px; bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
+  .m-ayuda { display: none; }
+}
+.m-mama circle { fill: #d9667a; stroke: #fff; stroke-width: .12; }
+.m-papa circle { fill: var(--menta); stroke: #fff; stroke-width: .12; }

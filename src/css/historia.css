@@ -1,0 +1,157 @@
+/* Cinemáticas (franjas, diálogo tipo cuento, títulos, fundido) y tarjeta del capítulo con el diario */
+.cine { position: fixed; inset: 0; z-index: 40; pointer-events: none; }
+.cine-franja { position: absolute; left: 0; right: 0; height: 7vh; background: #0d1022; }
+.cine-franja.arriba { top: 0; }
+.cine-franja.abajo { bottom: 0; }
+
+.cine-saltar {
+  position: absolute; top: calc(7vh + 10px); right: 16px; pointer-events: auto;
+  font: 800 13px var(--f-texto); color: var(--papel);
+  background: rgba(13,16,34,.55); border: 2px solid var(--papel); border-radius: 999px; padding: 6px 14px; cursor: pointer;
+}
+.cine-saltar:focus-visible { outline: 3px solid var(--sol); outline-offset: 2px; }
+
+.cine-dialogo {
+  position: absolute; left: 16px; right: 16px; bottom: calc(7vh + 14px);
+  max-width: 680px; margin: 0 auto; box-sizing: border-box;
+  pointer-events: auto;
+  background: var(--papel); border: 2px solid var(--tinta); border-radius: 16px; box-shadow: 6px 6px 0 var(--tinta);
+  padding: 16px 20px 14px;
+  animation: cine-entra .22s ease-out;
+}
+@keyframes cine-entra { from { transform: translateY(10px); opacity: 0; } }
+.cine-quien {
+  position: absolute; top: -16px; left: 18px;
+  font: 800 16px var(--f-display); color: #fff;
+  background: var(--coral); border: 2px solid var(--tinta); border-radius: 999px; padding: 0 14px;
+}
+.cine-quien[data-quien="mama"] { background: #d9667a; }
+.cine-quien[data-quien="papa"] { background: var(--menta); }
+.cine-quien[data-quien="abuela"] { background: var(--lila); }
+.cine-quien[data-quien="yo"] { background: var(--cielo); }
+.cine-texto { margin: 6px 0 8px; font-size: 19px; line-height: 1.45; font-weight: 600; }
+.cine-ops { display: grid; gap: 8px; }
+.cine-ops:empty { display: none; }
+.cine-sig {
+  display: block; margin-left: auto;
+  font: 800 14px var(--f-texto); color: var(--tinta);
+  background: none; border: 0; cursor: pointer; padding: 2px 0;
+}
+.cine-sig kbd { height: 22px; font-size: 11px; margin-left: 4px; }
+.cine-sig:focus-visible { outline: 3px solid var(--sol); outline-offset: 2px; border-radius: 6px; }
+
+.cine-titulo {
+  position: absolute; inset: 0; display: grid; place-content: center; text-align: center; padding: 16px;
+  background: radial-gradient(ellipse at center, rgba(13,16,34,.85), rgba(13,16,34,.6));
+  color: var(--papel); animation: cine-aparece .6s ease-out;
+}
+.cine-titulo .eyebrow { color: var(--sol); }
+.cine-titulo h2 { margin: 6px 0 0; font: 800 clamp(30px, 6vw, 52px)/1.05 var(--f-display); text-wrap: balance; }
+@keyframes cine-aparece { from { opacity: 0; } }
+
+.cine-negro { position: fixed; inset: 0; z-index: 50; background: #0d1022; opacity: 0; pointer-events: none; transition: opacity .6s ease; }
+.cine-negro.on { opacity: 1; }
+
+/* ---------- tarjeta del capítulo */
+.capitulo { z-index: 35; }
+.cap-hoja h2 { font-family: var(--f-display); font-size: 21px; margin: 16px 0 6px; }
+.diario { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin: 4px 0 0; }
+.pagina {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: #fff; border: 2px solid var(--tinta); border-radius: 10px; padding: 6px 2px;
+  font-size: 12px; font-weight: 800; color: var(--tinta-2);
+}
+.pagina.hoy { background: var(--sol); color: var(--tinta); box-shadow: var(--sombra); transform: translateY(-2px); }
+.pagina.hecha { background: #e5f6ee; color: var(--bueno); }
+.pagina i { display: flex; gap: 1px; }
+.pagina svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; }
+.pagina b.llena svg { fill: var(--sol); stroke: var(--tinta); }
+.metas { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.metas li { position: relative; padding-left: 28px; font-weight: 700; line-height: 1.35; }
+.metas li::before {
+  content: ''; position: absolute; left: 0; top: 1px; width: 18px; height: 18px;
+  border: 2px solid var(--tinta); border-radius: 6px; background: #fff;
+}
+.cap-mundo { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+.cap-mundo span { font-size: 13px; font-weight: 800; background: var(--papel-2); border: 2px solid var(--tinta); border-radius: 999px; padding: 2px 10px; }
+
+@media (max-width: 760px) {
+  .cine-texto { font-size: 17px; }
+  .diario { gap: 4px; }
+  .pagina { font-size: 10px; }
+  .pagina svg { width: 9px; height: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cine-dialogo, .cine-titulo { animation: none; }
+  .cine-negro { transition: none; }
+}
+.cine-ops .op { grid-template-columns: auto 1fr; align-items: center; }
+.cine-ops .op kbd { grid-row: auto; align-self: center; }
+.cine-ops .op-t { font-size: 17px; }
+
+/* ---------- tutorial guiado del día 1 */
+.guia {
+  position: fixed; z-index: 46; left: 50%; top: calc(110px + env(safe-area-inset-top, 0px)); transform: translateX(-50%);
+  width: min(560px, calc(100% - 32px)); box-sizing: border-box;
+  display: flex; align-items: center; gap: 12px;
+  background: var(--papel); border: 2px solid var(--tinta); border-radius: 16px; box-shadow: 6px 6px 0 var(--tinta);
+  padding: 12px 14px;
+}
+.guia.nuevo { animation: guia-entra .35s ease-out; }
+@keyframes guia-entra { from { transform: translate(-50%, -8px) scale(.97); opacity: 0; } }
+.g-ico { flex: none; width: 44px; height: 44px; border-radius: 50%; background: var(--sol); border: 2px solid var(--tinta); display: grid; place-items: center; }
+.g-ico svg { width: 26px; height: 26px; fill: var(--tinta); }
+.g-txt { flex: 1; min-width: 0; }
+.g-txt small { font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--coral); }
+.g-txt p { margin: 2px 0 0; font-size: 16px; font-weight: 700; line-height: 1.4; }
+.guia .btn { flex: none; font-size: 16px; padding: 8px 14px; }
+.foco { z-index: 45 !important; box-shadow: 0 0 0 4px var(--sol), 0 0 0 100vmax rgba(13,16,34,.5) !important; animation: foco-late 1.2s ease-in-out infinite; }
+@keyframes foco-late { 50% { box-shadow: 0 0 0 8px var(--sol), 0 0 0 100vmax rgba(13,16,34,.5); } }
+
+/* ---------- cierre del día en el resumen */
+.r-diario { border: 2px solid var(--tinta); border-radius: 14px; background: #fff; padding: 14px 16px; margin: 4px 0 16px; }
+.r-diario h2 { margin: 0 0 6px !important; }
+.r-estrellas { display: flex; gap: 6px; margin: 4px 0 10px; }
+.r-estrellas svg { width: 40px; height: 40px; fill: var(--papel-2); stroke: var(--tinta); stroke-width: 1.5; }
+.r-estrellas .llena svg { fill: var(--sol); animation: estrella .5s ease-out backwards; }
+.r-estrellas .llena:nth-child(2) svg { animation-delay: .25s; }
+.r-estrellas .llena:nth-child(3) svg { animation-delay: .5s; }
+@keyframes estrella { from { transform: scale(0) rotate(-40deg); } 70% { transform: scale(1.25); } }
+.r-metas { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 4px; }
+.r-metas li { padding-left: 26px; position: relative; font-weight: 700; }
+.r-metas li::before { content: '✗'; position: absolute; left: 4px; color: var(--malo); font-weight: 900; }
+.r-metas li.si::before { content: '✓'; color: var(--bueno); }
+.r-semana { margin: 0 0 12px; font-weight: 700; color: var(--tinta-2); }
+
+@media (max-width: 760px) {
+  .guia { top: auto; bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
+  .g-txt p { font-size: 15px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .guia.nuevo, .foco, .r-estrellas .llena svg { animation: none; }
+}
+.metas li.nota-estrellas { padding-left: 0; font-size: 13px; font-weight: 600; color: var(--tinta-2); }
+.metas li.nota-estrellas::before { display: none; }
+
+/* ---------- despertar en primera persona: párpados que se abren y el reloj */
+.ojos { position: fixed; inset: 0; z-index: 48; pointer-events: none; backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); }
+.ojos .cine-saltar { pointer-events: auto; top: 16px; }
+.parpado { position: absolute; left: -5%; right: -5%; height: 51%; background: #07070d; }
+.parpado.arriba { top: 0; border-radius: 0 0 50% 50% / 0 0 30% 30%; }
+.parpado.abajo { bottom: 0; border-radius: 50% 50% 0 0 / 30% 30% 0 0; }
+.ojos.parpadea { animation: vista 3.2s ease-out forwards; }
+.ojos.parpadea .parpado { animation: parpado 3.2s ease-in-out forwards; }
+@keyframes parpado {
+  0% { height: 51%; } 18% { height: 34%; } 26% { height: 51%; } 40% { height: 51%; }
+  58% { height: 22%; } 66% { height: 30%; } 100% { height: 0%; }
+}
+@keyframes vista { 0% { backdrop-filter: blur(7px); } 70% { backdrop-filter: blur(3px); } 100% { backdrop-filter: blur(0); } }
+.ojos-reloj {
+  position: absolute; left: 50%; top: 14%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  background: rgba(13,16,34,.82); border: 2px solid #ff4d3d; border-radius: 14px; padding: 10px 22px;
+  animation: cine-aparece .5s ease-out;
+}
+.ojos-reloj b { font: 54px/1 var(--f-reloj); color: #ff4d3d; text-shadow: 0 0 14px rgba(255,77,61,.6); }
+.ojos-reloj span { font: 800 17px var(--f-display); color: var(--papel); }
+@media (prefers-reduced-motion: reduce) { .ojos.parpadea, .ojos.parpadea .parpado { animation-duration: .01s; } }

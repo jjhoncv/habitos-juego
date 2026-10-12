@@ -1,0 +1,23 @@
+/* Álbum de descubrimientos y logros */
+.b-album {
+  position: fixed; z-index: 5; left: 16px; bottom: calc(172px + env(safe-area-inset-bottom, 0px));
+  display: flex; align-items: center; gap: 8px; cursor: pointer;
+  font: 800 15px var(--f-display); color: var(--tinta); background: var(--sol);
+  border: 2px solid var(--tinta); border-radius: 999px; padding: 6px 14px; box-shadow: var(--sombra);
+}
+.b-album b { background: var(--tinta); color: var(--papel); border-radius: 999px; padding: 0 8px; font-size: 13px; }
+.album { z-index: 46; }
+.al-hoja { width: min(760px, 100%); max-height: calc(100vh - 32px); display: flex; flex-direction: column; }
+.al-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.al-cab h2 { margin: 2px 0 0; font: 800 26px/1.1 var(--f-display); }
+.al-tabs { display: flex; gap: 6px; margin: 12px 0; }
+.al-tabs button { font: 800 14px var(--f-texto); background: #fff; color: var(--tinta); border: 2px solid var(--tinta); border-radius: 999px; padding: 4px 14px; cursor: pointer; }
+.al-tabs button[aria-selected="true"] { background: var(--tinta); color: var(--papel); }
+.al-grid { overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; padding-bottom: 4px; }
+.al-carta { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border: 2px dashed #b7c3d6; border-radius: 12px; background: var(--papel-2); color: var(--tinta-2); font-size: 13px; line-height: 1.35; }
+.al-carta b { font: 800 16px var(--f-display); color: var(--tinta-2); }
+.al-carta small { font-weight: 800; color: var(--tinta-2); opacity: .8; }
+.al-carta.si { border: 2px solid var(--tinta); background: #fff; color: var(--tinta); }
+.al-carta.si b { color: var(--tinta); }
+.al-carta.logro { background: #fff6d9; }
+@media (max-width: 760px) { .b-album { bottom: calc(232px + env(safe-area-inset-bottom, 0px)); } }

@@ -1,0 +1,19 @@
+/* Crecer: las barras de conocimiento y responsabilidad */
+.crecer-hud {
+  position: fixed; z-index: 5; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); width: 250px;
+  background: var(--papel); border: 2px solid var(--tinta); border-radius: 12px; box-shadow: var(--sombra); padding: 8px 10px;
+}
+.crecer-hud > b { display: block; font: 800 14px var(--f-display); margin-bottom: 4px; }
+.cc-barra { display: grid; grid-template-columns: 112px 1fr auto; gap: 6px; align-items: center; font-size: 12px; font-weight: 800; color: var(--tinta-2); margin: 3px 0; }
+.cc-barra i { display: block; height: 10px; background: var(--papel-2); border: 1.5px solid var(--tinta); border-radius: 999px; overflow: hidden; }
+.cc-barra i b { display: block; height: 100%; background: linear-gradient(90deg, var(--cielo), var(--lila)); transition: width .6s ease; }
+.cc-barra em { font-style: normal; font-family: var(--f-reloj); font-size: 11px; }
+.cr-crecer { border: 2px solid var(--tinta); border-radius: 14px; background: #f3efff; padding: 10px 14px; margin: 8px 0 12px; }
+.cr-crecer h3 { margin: 0 0 6px; font: 800 18px var(--f-display); }
+.cr-crecer p { margin: 6px 0 0; font-size: 14px; line-height: 1.4; color: var(--tinta-2); }
+.cr-crecer .cc-barra { font-size: 13px; grid-template-columns: 130px 1fr auto; }
+@media (max-width: 760px) { .crecer-hud { display: none; } }
+.cap-cumple { border: 3px solid var(--sol); border-radius: 14px; background: #fff6d9; padding: 10px 14px; margin: 6px 0 10px; }
+.cap-cumple h2 { margin: 0 0 6px !important; font: 800 24px var(--f-display); color: var(--coral); }
+.cap-cumple ul { margin: 0; padding-left: 18px; font-weight: 700; line-height: 1.5; }
+.en-partido .crecer-hud { display: none; }
