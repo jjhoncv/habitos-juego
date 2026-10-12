@@ -97,6 +97,7 @@
   </div>
   <div class="cap-sonido"><button class="btn sec" type="button" id="capSonido">🔊 Probar sonido</button><p id="capSonidoTxt" aria-live="polite"></p></div>
   <div class="i-botones">
+    <button class="btn" type="button" id="capContinuar" hidden></button>
     <button class="btn" type="button" id="capEmpezar"></button>
     <button class="btn sec" type="button" id="capHistoria">Ver la historia</button>
     <button class="btn sec" type="button" id="capEditar">Cambiar personaje</button>
@@ -139,10 +140,19 @@
     if (p.clima === 'lluvia') mundo.push('Está lloviendo');
     $('#capMundo').innerHTML = mundo.map((t) => `<span>${t}</span>`).join('');
     $('#capEmpezar').textContent = pr.prologo ? `Empezar el día ${pr.dia}` : 'Empezar la historia';
+    // ¿hay una partida guardada de hoy? se puede seguir donde quedaste
+    const g = pr.prologo && motor.partidaDeHoy ? motor.partidaDeHoy() : null;
+    $('#capContinuar').hidden = !g;
+    if (g) {
+      const hh = String(Math.floor(g.S.min / 60)).padStart(2, '0'), mm = String(Math.floor(g.S.min % 60)).padStart(2, '0');
+      $('#capContinuar').textContent = `Continuar donde quedaste · ${hh}:${mm} · ${g.titulo || g.lugar}`;
+      $('#capEmpezar').textContent = `Empezar el día ${pr.dia} de nuevo`;
+      $('#capEmpezar').classList.add('sec');
+    } else $('#capEmpezar').classList.remove('sec');
     $('#capHistoria').hidden = !pr.prologo;
     if (H.crecer && pr.prologo) H.crecer.pintarEnCapitulo($('#capitulo .cap-hoja'));
     $('#capitulo').hidden = false;
-    $('#capEmpezar').focus();
+    ($('#capContinuar').hidden ? $('#capEmpezar') : $('#capContinuar')).focus();
   }
 
   // ---------- fin de la semana: papá decide si el cachorro se queda
@@ -202,8 +212,10 @@
     if (!pr.prologo) { verHistoria(); return; }
     if (pr.dia > DIAS) { progreso.repetirSemana(); window.location.reload(); return; }
     $('#capitulo').hidden = true;
+    if (motor.borrarPartida) motor.borrarPartida();   // empezar de nuevo: se olvida la partida guardada
     motor.empezar();
   });
+  $('#capContinuar').addEventListener('click', () => { $('#capitulo').hidden = true; motor.continuar(); });
   $('#capHistoria').addEventListener('click', verHistoria);
   $('#capEditar').addEventListener('click', () => { $('#capitulo').hidden = true; if (H.creador) H.creador.abrir(); });
   document.addEventListener('keydown', (e) => {

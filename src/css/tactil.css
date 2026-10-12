@@ -184,10 +184,25 @@ html:not(.toque) .tactil, html:not(.toque) .b-mapa, html:not(.toque) .solo-toque
   .toque .marcador { top: auto; bottom: calc(196px + env(safe-area-inset-bottom, 0px)); }
 }
 
-/* ---------- pantallas grandes: los controles crecen con la pantalla (--k lo calcula juego.js, de 1 a 1.6).
+/* ---------- pantallas grandes: los controles crecen con la pantalla (--k lo calcula juego.js, de 1 a 1.8).
    zoom escala el tamaño y también la distancia a los bordes, así que no se tapan entre ellos. */
 .toque .tactil, .toque .b-sonido, .toque .b-mapa, .toque .b-album, .toque .b-correr, .toque .b-silbar,
 .toque .mc-botones, .toque .crecer-hud, .toque .lugar, .toque .prompt, .toque .progreso,
 .toque .sot-hud, .toque .pisc-pad, .toque .pisc-acc { zoom: var(--k, 1); }
 /* con la lista de tareas abierta no cabe también la barra de crecer (sale en la tarjeta del día) */
 html.toque:has(#lista:not(.plegada):not([hidden])) .crecer-hud { display: none !important; }
+
+/* ---------- tablet parada (iPad vertical): la fila de abajo no alcanza; como en el celular parado,
+   sonido, mapa y álbum suben en columna sobre Usar, y Saltar/Agacharse van en columna junto a Usar */
+@media (orientation: portrait) and (min-width: 601px) {
+  .toque .crecer-hud, .toque .lugar { display: none; }
+  .toque .b-sonido, .b-mapa { right: calc(38px + env(safe-area-inset-right, 0px)); }
+  .toque .b-sonido { bottom: calc(132px + env(safe-area-inset-bottom, 0px)); }
+  .b-mapa { bottom: calc(196px + env(safe-area-inset-bottom, 0px)); }
+  .toque .b-album { right: calc(18px + env(safe-area-inset-right, 0px)); bottom: calc(262px + env(safe-area-inset-bottom, 0px)); }
+  .toque .prompt, .toque .progreso { bottom: calc(330px + env(safe-area-inset-bottom, 0px)); }
+  .toque .b-saltar { right: calc(124px + env(safe-area-inset-right, 0px)); bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+  .toque .b-agachar { right: calc(124px + env(safe-area-inset-right, 0px)); bottom: calc(22px + env(safe-area-inset-bottom, 0px)); }
+  .toque .b-silbar { left: calc(26px + env(safe-area-inset-left, 0px)); bottom: calc(232px + env(safe-area-inset-bottom, 0px)); }
+  /* el marcador del fútbol se queda arriba (abajo están los botones del partido, ya agrandados) */
+}

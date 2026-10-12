@@ -2442,6 +2442,7 @@
     P.root.position.y = 0; reiniciarSalto();
     agregarEscondites(escena);
     ganchos.construir.forEach((f) => f(nombre, escena, desde));
+    setTimeout(guardarPartida, 2500);   // al cambiar de lugar también se guarda
     refrescar();
     $('#hLugar').textContent = escena.titulo;
     crearEtiquetas();
@@ -3597,6 +3598,8 @@
   function fin(motivo) {
     if (!jugando) return;
     if (NINO && S.fase === 'manana') { if (FINDE) almuerzoFinde(); else irAlColegio(motivo); return; }
+    // el día terminó: la partida guardada ya no sirve (el día queda en el diario)
+    if (NINO && motivo === 'dia') borrarPartida();
     // antes del resumen, papá y mamá conversan contigo (una sola vez)
     if (NINO && motivo === 'dia' && !S.f.charla && escena) {
       S.f.charla = true;
@@ -4227,9 +4230,10 @@
   // Se activan solos al tocar la pantalla y se esconden si usas el teclado.
   const raiz = document.documentElement;
   let tactil = false;
-  // en pantallas grandes (iPad de 11" o 12,9") los controles crecen con la pantalla: --k va de 1 a 1.6
+  // en pantallas grandes (iPad de 11" o 12,9") los controles crecen con la pantalla: --k va de 1 a 1.8
   function escalaTactil() {
-    const k = Math.max(1, Math.min(1.6, Math.min(window.innerWidth / 900, window.innerHeight / 650)));
+    // según el lado corto: igual de grandes con el iPad parado o acostado (iPhone 1, iPad 11" ≈1.4, iPad 12,9" ≈1.7)
+    const k = Math.max(1, Math.min(1.8, Math.min(window.innerWidth, window.innerHeight) / 600));
     raiz.style.setProperty('--k', k.toFixed(3));
   }
   window.addEventListener('resize', escalaTactil);
@@ -4308,6 +4312,69 @@
   }
   $('#bEmpezar').addEventListener('click', empezar);
 
+  // ---------------------------------------------------------------- guardar y continuar
+  // La partida del día se guarda sola (cada 30 s, al cambiar de lugar y al cerrar o esconder la app).
+  // Al volver, la tarjeta del día ofrece "Continuar donde quedaste". Al dormir, el día pasa al diario y se borra.
+  const prog = () => window.Habitos && window.Habitos.progreso;
+  function guardarPartida() {
+    if (!NINO || !prog() || !jugando || cargando || cine || primera || alarmaActiva || levantando || examen || !escena) return false;
+    if (S.fase === 'colegio' || S.fase === 'prologo' || S.f.charla) return false;
+    if (escena.nombre === 'aula' || escena.nombre === 'patio') return false;
+    try {
+      const pr = prog().cargar(), q = P.root.position;
+      const perro = window.Habitos.perro;
+      prog().guardar({ partida: {
+        dia: pr.dia, guardada: Date.now(), lugar: escena.nombre, titulo: escena.titulo,
+        pos: [q.x, q.z], rot: P.root.rotation.y,
+        S: JSON.parse(JSON.stringify(S)),
+        perro: perro ? { modo: ['sigue', 'espera', 'cama', 'casita'].includes(perro.modo) ? perro.modo : 'sigue', nec: Object.assign({}, perro.necesidades) } : null,
+      } });
+      return true;
+    } catch (e) { return false; }
+  }
+  function borrarPartida() { if (prog()) prog().guardar({ partida: null }); }
+  function partidaDeHoy() {
+    if (!prog()) return null;
+    const pr = prog().cargar(), g = pr.partida;
+    return g && g.dia === pr.dia && g.S ? g : null;
+  }
+  setInterval(guardarPartida, 30000);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) guardarPartida(); });
+  window.addEventListener('pagehide', guardarPartida);
+  function continuar() {
+    const g = partidaDeHoy();
+    if (!g || jugando) { empezar(); return; }
+    if (enCapitulo()) TAREAS.unshift([`Darle de comer a ${PERFIL.mascota.nombre}`, () => !!S.f.perroComio, 2, 'tiene hambre']);
+    $('#intro').hidden = true;
+    $('#hud').hidden = false;
+    $('#tactil').hidden = false;
+    $('#bCorrer').hidden = false;
+    jugando = true;
+    Sonido.iniciar();
+    Sonido.musica(true);
+    if (g.S.fase === 'tarde' && S.fase !== 'tarde') cambiarFase('tarde', g.S.min);
+    Object.assign(S, g.S);
+    // ya estás despierto: de pie, no en la cama
+    P.cuerpo.rotation.x = 0; P.anim = 'quieto'; P.root.position.y = 0;
+    alarmaActiva = false;
+    const perro = window.Habitos.perro;
+    if (perro && g.perro) { perro.modo = g.perro.modo; Object.assign(perro.necesidades, g.perro.nec || {}); perro.necesidades.ult = null; }
+    initStats();
+    contarLogros();
+    pintarTiempo();
+    mostrarLista();
+    irA(g.lugar, { titulo: 'Continuando tu día', tips: [`Son las ${hora(S.min)}. Sigues donde te quedaste: ${g.titulo || g.lugar}.`, 'Tu partida se guarda sola mientras juegas.'] });
+    // cuando termine de cargar el lugar, vuelves al mismo sitio
+    const ponerEnSitio = () => {
+      if (cargando || !escena || escena.nombre !== g.lugar) { setTimeout(ponerEnSitio, 200); return; }
+      P.root.position.set(g.pos[0], 0, g.pos[1]); P.root.rotation.y = g.rot || 0;
+      mostrarLista();
+      avisar('¡Seguimos! Tu partida estaba guardada.', 'bien');
+      evento('partidaCargada', { lugar: g.lugar, min: S.min });
+    };
+    setTimeout(ponerEnSitio, 400);
+  }
+
   function pintarIntro() {
     $('#iTitulo').textContent = `La mañana de ${CFG.nombre}`;
     const extra = (invierno() ? ' Es invierno: afuera todavía está oscuro y hace frío, así que cuesta más salir de la cama.' : '')
@@ -4363,6 +4430,10 @@
       ubicacion: () => (escena ? { lugar: escena.nombre, w: escena.w, d: escena.d, x: P.root.position.x, z: P.root.position.z, rot: P.root.rotation.y, hud: !$('#hud').hidden, cargando, perro: perroCuarto } : null),
       aclarar: () => fundido(false),
       empezar: () => empezar(),
+      continuar: () => continuar(),
+      partidaDeHoy: () => partidaDeHoy(),
+      guardarPartida: () => guardarPartida(),
+      borrarPartida: () => borrarPartida(),
       perroEnCuarto(on) {
         perroCuarto = !!on;
         if (!jugando && !cine && escena && escena.nombre === 'dormitorio') { construir('dormitorio', null); acostar(); }
