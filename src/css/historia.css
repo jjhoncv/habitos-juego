@@ -34,9 +34,13 @@
 .cine-ops:empty { display: none; }
 .cine-sig {
   display: block; margin-left: auto;
-  font: 800 14px var(--f-texto); color: var(--tinta);
-  background: none; border: 0; cursor: pointer; padding: 2px 0;
+  font: 800 18px var(--f-display); color: var(--papel);
+  background: var(--tinta); border: 2px solid var(--tinta); border-radius: 999px; cursor: pointer; padding: 8px 22px;
+  min-height: 48px;
 }
+/* ya tuvo tiempo de leer: el botón se ilumina para que el niño lo toque */
+.cine-sig.listo { background: var(--sol); color: var(--tinta); animation: cine-listo 1.2s ease-in-out infinite; }
+@keyframes cine-listo { 50% { transform: scale(1.06); box-shadow: 0 0 0 6px rgba(242,166,35,.35); } }
 .cine-sig kbd { height: 22px; font-size: 11px; margin-left: 4px; }
 .cine-sig:focus-visible { outline: 3px solid var(--sol); outline-offset: 2px; border-radius: 6px; }
 
@@ -158,3 +162,7 @@
 /* qué trae cada día (en la tarjeta y en el resumen) */
 .cap-sorpresa, .r-manana { margin: -2px 0 10px; padding: 8px 12px; border-radius: 10px; background: #fff4cc; border: 2px solid var(--sol); font-weight: 700; line-height: 1.35; }
 .cap-sorpresa b, .r-manana b { font-family: var(--f-display); }
+
+/* probar el sonido */
+.cap-sonido { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0 0 12px; }
+.cap-sonido p { margin: 0; flex: 1 1 240px; font-size: 13px; font-weight: 700; color: var(--tinta-2); }

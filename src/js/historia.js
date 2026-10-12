@@ -95,6 +95,7 @@
 <span class="solo-toque">Toca una opción para elegir</span>
     <span>Con sonido y voces: sube el volumen</span>
   </div>
+  <div class="cap-sonido"><button class="btn sec" type="button" id="capSonido">🔊 Probar sonido</button><p id="capSonidoTxt" aria-live="polite"></p></div>
   <div class="i-botones">
     <button class="btn" type="button" id="capEmpezar"></button>
     <button class="btn sec" type="button" id="capHistoria">Ver la historia</button>
@@ -219,4 +220,20 @@
   }
 
   H.historia = { verHistoria, mostrarCapitulo };
+  // ---------- probar el sonido (en iPad a veces no suena: esto dice por qué)
+  document.querySelector('#capSonido').addEventListener('click', () => {
+    motor.probarSonido();
+    const txt = document.querySelector('#capSonidoTxt');
+    txt.textContent = 'Probando… ¿escuchaste una musiquita y una voz?';
+    setTimeout(() => {
+      const e = motor.estadoSonido();
+      const partes = [];
+      partes.push(e.audio === 'running' ? 'Efectos: encendidos ✓' : `Efectos: no se pudieron encender (${e.audio}). Cierra la app y vuelve a abrirla, y toca la pantalla.`);
+      if (!e.voces) partes.push('Voces: este navegador no tiene voces.');
+      else if (!e.vocesEs) partes.push(`Voces: no hay ninguna voz en español instalada (${e.vocesTotal} en total). En el iPad: Ajustes → Accesibilidad → Contenido leído → Voces → Español, y descarga una.`);
+      else partes.push(`Voces en español: ${e.vocesEs} ✓`);
+      partes.push('Si los efectos están encendidos y no escuchas nada: sube el volumen con los botones del costado y revisa que el iPad no esté en silencio.');
+      txt.textContent = partes.join(' · ');
+    }, 1800);
+  });
 })();

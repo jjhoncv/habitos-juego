@@ -351,6 +351,17 @@
         }
       },
       hablando() { try { return !!(window.speechSynthesis && speechSynthesis.speaking); } catch (e) { return false; } },
+      // para el botón "Probar sonido": qué está pasando con el audio en este equipo
+      probar() { desbloquear(); activo = true; if (master) master.gain.value = 0.85; try { localStorage.setItem('habitos-sonido', '1'); } catch (e) { /* nada */ } if (ctx && SFX.logro) SFX.logro(ctx.currentTime + 0.05); },
+      estado() {
+        let vs = [];
+        try { vs = window.speechSynthesis ? speechSynthesis.getVoices() : []; } catch (e) { /* nada */ }
+        return {
+          audio: ctx ? ctx.state : 'sin iniciar', activo,
+          voces: !!window.speechSynthesis, vocesEs: vs.filter((v) => /^es/i.test(v.lang)).length, vocesTotal: vs.length,
+          sesion: navigator.audioSession ? navigator.audioSession.type : 'no disponible',
+        };
+      },
     };
   })();
 
@@ -4350,6 +4361,8 @@
         if (!jugando && !cine && escena && escena.nombre === 'dormitorio') { construir('dormitorio', null); acostar(); }
       },
       hablar(t, quien) { Sonido.iniciar(); Sonido.hablar(t, quien); },
+      probarSonido() { Sonido.probar(); setTimeout(() => Sonido.hablar('¡Hola! Así suenan las voces del juego.', 'mama'), 700); },
+      estadoSonido: () => Sonido.estado(),
     },
   });
   const bSon = $('#bSonido');
@@ -4561,6 +4574,7 @@
       $('#cineTexto').textContent = texto;
       $('#cineOps').innerHTML = '';
       $('#cineSig').hidden = false;
+      $('#cineSig').classList.remove('listo');
       $('#cineDialogo').hidden = false;
       Sonido.hablar(texto, A === P ? 'yo' : A.voz);
       const fin = () => {
@@ -4655,7 +4669,9 @@
     // avanza solo cuando terminó de hablar (con voz) o pasó el tiempo de lectura
     const d = cine.dialogo;
     // si la voz del navegador se queda pegada, igual avanza después de unos segundos más
-    if (d && !d.ops && performance.now() > d.min && (!Sonido.hablando() || performance.now() > d.min + 7000)) { d.extra -= dt; if (d.extra <= 0 && cine.siguiente) cine.siguiente(); }
+    // con niños no avanza sola: espera a que toque "Siguiente" (el botón se ilumina cuando ya tuvo tiempo de leer)
+    if (d && !d.ops && NINO) { if (performance.now() > d.min && !d.listo) { d.listo = true; $('#cineSig').classList.add('listo'); } }
+    else if (d && !d.ops && performance.now() > d.min && (!Sonido.hablando() || performance.now() > d.min + 7000)) { d.extra -= dt; if (d.extra <= 0 && cine.siguiente) cine.siguiente(); }
   }
   async function correrCine(montaje, pasos) {
     await fundido(true);
