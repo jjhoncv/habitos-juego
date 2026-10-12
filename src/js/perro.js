@@ -1,4 +1,4 @@
-/* El cachorro (Molly, Bruno… el nombre que eligió el jugador).
+/* La cachorrita (Molly por defecto, o el nombre que eligió el jugador).
    - En la mañana duerme en su camita; cuando le das de comer, va a su plato y después te sigue por la casa.
    - Se le puede acariciar, pedirle que espere o llamarla, y llevarla a jugar fútbol al jardín (futbol.js).
    - A veces hace travesuras: papá llega y pregunta quién fue. Tú decides si la cubres, dices la verdad o la acusas.

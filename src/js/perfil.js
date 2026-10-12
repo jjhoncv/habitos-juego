@@ -33,7 +33,8 @@
     nino: ['Dani', 'Santiago', 'Lucas', 'Thiago', 'Diego', 'Gael', 'Leo', 'Joaquín'],
     nina: ['Dani', 'Valentina', 'Camila', 'Sofía', 'Lucía', 'Isabella', 'Mía', 'Emma', 'Renata'],
   };
-  const MASCOTAS = ['Bruno', 'Toby', 'Luna', 'Rocky', 'Canela', 'Max', 'Nala', 'Coco'];
+  // los textos hablan de ella (acariciarla, está agotada…): nombres de perrita
+  const MASCOTAS = ['Molly', 'Luna', 'Canela', 'Nala', 'Coco', 'Lola', 'Kira', 'Frida'];
 
   const BASE = {
     nombre: 'Dani', genero: 'nino', edad: 7,
@@ -41,7 +42,7 @@
     contextura: 'normal', estatura: 'media',
     pijama: '#f2b950', zapatillas: '#de5546', accesorio: 'ninguno', accColor: '#de5546',
     estacion: 'verano', clima: 'sol',
-    mascota: { tipo: 'perro', nombre: 'Bruno', color: '#c98a4b' },
+    mascota: { tipo: 'perro', nombre: 'Molly', color: '#f1ece2' },
     creado: false,
   };
 
@@ -69,7 +70,12 @@
   }
 
   function cargar() {
-    try { return sanear(JSON.parse(localStorage.getItem(CLAVE))); } catch (e) { return sanear(null); }
+    try {
+      const g = JSON.parse(localStorage.getItem(CLAVE));
+      // antes la cachorrita se llamaba Bruno por defecto: ahora es Molly (los textos hablan de ella)
+      if (g && g.mascota && g.mascota.nombre === 'Bruno') { g.mascota.nombre = 'Molly'; localStorage.setItem(CLAVE, JSON.stringify(g)); }
+      return sanear(g);
+    } catch (e) { return sanear(null); }
   }
   function guardar(p) {
     const r = sanear(Object.assign({}, p, { creado: true }));
