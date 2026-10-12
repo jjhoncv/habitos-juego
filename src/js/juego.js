@@ -44,7 +44,9 @@
   if (PERFIL) CFG.nombre = PERFIL.nombre;
   const gx = (o, a) => (PERFIL && PERFIL.genero === 'nina' ? a : o);
   const invierno = () => !!PERFIL && PERFIL.estacion === 'invierno';
-  const lluvia = () => !!PERFIL && PERFIL.clima === 'lluvia';
+  // un módulo puede forzar el clima del día (por ejemplo, el jueves de lluvia): api.forzarClima('lluvia'|'sol'|null)
+  let climaForzado = null;
+  const lluvia = () => (climaForzado ? climaForzado === 'lluvia' : !!PERFIL && PERFIL.clima === 'lluvia');
   const ESTATURA = { baja: 0.93, media: 1, alta: 1.07 };
   const CONTEXTURA = { delgada: 0.86, normal: 1, robusta: 1.16 };
 
@@ -2337,6 +2339,8 @@
     return E;
   }
 
+  // los módulos pueden agregar lugares nuevos (el veterinario, el parque…) con api.registrarEscena
+  const TITULOS_EXTRA = {};
   const CONSTRUIR = { dormitorio: construirDormitorio, pasillo: construirPasillo, bano: construirBano, comedor: construirComedor, aula: construirAula, patio: construirPatio, sala: construirSala, jardin: construirJardin, mirador: construirMirador };
 
   function construir(nombre, desde) {
@@ -2970,7 +2974,7 @@
     cargando = true;
     const desde = o.desde || escena.nombre;
     const nombres = { dormitorio: NINO ? 'Tu cuarto' : 'Dormitorio', pasillo: 'Pasillo', bano: 'Baño', comedor: 'Comedor', aula: 'Colegio', patio: 'Recreo', sala: 'Sala', jardin: 'Jardín', mirador: 'Mirador' };
-    $('#cTitulo').textContent = o.titulo || nombres[dest];
+    $('#cTitulo').textContent = o.titulo || nombres[dest] || TITULOS_EXTRA[dest] || dest;
     $('#cTips').innerHTML = (o.tips || consejos()).map((t) => `<li>${t}</li>`).join('');
     const barra = $('#cBarra');
     barra.style.animation = 'none'; void barra.offsetWidth; barra.style.animation = '';
@@ -4316,8 +4320,14 @@
     S, P, CFG,
     get escena() { return escena; },
     get perfil() { return PERFIL; },
+    forzarClima: (c) => { climaForzado = c || null; },
+    get llueve() { return lluvia(); },
     get camara() { return camera; },
     get tactil() { return tactil; },
+    // un lugar nuevo: fn() construye la escena con nuevaEscena(nombre, titulo, ancho, fondo, opciones) y la devuelve
+    registrarEscena: (nombre, titulo, fn) => { CONSTRUIR[nombre] = fn; TITULOS_EXTRA[nombre] = titulo; },
+    nuevaEscena, ventana, cuadro, arbol,
+    diaDeHoy: () => diaDeHoy(),
     get corriendo() { return corriendo(); },
     estado: () => ({ jugando, cargando, accion: !!accion, panel: !!panelAbierto, visita: !!visita, examen: !!examen, levantando: !!levantando, alarma: alarmaActiva, cine: !!cine, tutorial: !!tutorial, vitrina: !!vitrina, mamaHabla: mamaHabla(), fase: S.fase }),
     alConstruir: (f) => ganchos.construir.push(f),

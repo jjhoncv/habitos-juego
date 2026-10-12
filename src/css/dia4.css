@@ -1,0 +1,8 @@
+/* Día 4: velo del apagón (la casa a oscuras, con un poquito de luz al centro) y el relámpago */
+.d4-velo {
+  position: fixed; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 55%, rgba(20, 16, 40, 0.15) 0%, rgba(12, 10, 28, 0.55) 45%, rgba(6, 6, 18, 0.88) 100%);
+  transition: background .15s ease;
+}
+.d4-velo[hidden] { display: none; }
+.d4-velo.rayo { background: rgba(230, 236, 255, 0.55); }

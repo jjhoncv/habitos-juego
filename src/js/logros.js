@@ -42,6 +42,8 @@
     ['Kiosco', 'El kiosco', 'El recreo del colegio', 'Comprar algo con tu propina'],
     ['Amigos', 'Tus amigos del recreo', 'El recreo del colegio', 'Jugar fútbol en el recreo'],
     ['Escondite', 'Un escondite', 'Cuando vienen los pasos de mamá', 'Esconderte… si no te delatan'],
+    ['Parque', 'El parque', 'El sábado, paseando con papá', 'Columpios, tobogán, helado y amigos para tu cachorra'],
+    ['Mesa de revisión', 'La mesa de la veterinaria', 'La veterinaria (miércoles)', 'Pesarlo, revisarlo y vacunarlo lo mantiene sano'],
   ];
   const claveDe = (nombre) => {
     if (/^Plato de /.test(nombre)) return 'Plato';
@@ -66,6 +68,9 @@
     ['escondido', 'Invisible', 'Que mamá no te encuentre en tu escondite'],
     ['verdad', 'La verdad', 'Decir la verdad cuando tu cachorro hizo una travesura'],
     ['dia-perfecto', 'Día perfecto', 'Cumplir todas las metas del día'],
+    ['amigo-nuevo', 'Un amigo nuevo', 'Hacerte amigo de Teo el día que llegó'],
+    ['granPresentacion', 'Gran presentación', 'Preparar tu trabajo con tiempo y que te salga muy bien en la Feria del colegio'],
+    ['abuela', 'Domingo con la abuela', 'Almorzar con la abuela y que te lea tu diario'],
   ];
 
   let pr = H.progreso.cargar();
@@ -97,7 +102,7 @@
 
   // ---------- eventos del juego
   A.alEvento((tipo, d) => {
-    if (tipo === 'accion' && d.it) descubrir(claveDe(d.it.nombre));
+    if (tipo === 'accion' && d.it) descubrir(d.it.album || claveDe(d.it.nombre));
     if (tipo === 'gol') { lograr('primer-gol'); if (d.cabeza) lograr('cabezazo'); }
     if (tipo === 'finPartido') { if (d.goles >= 4) lograr('goleada'); if (d.modo === 'mano' && d.yo > d.perro) lograr('gana-mano'); }
     if (tipo === 'tarea' && d.primera >= d.total) lograr('estudioso');
@@ -107,6 +112,7 @@
       if (d === 'Decir la verdad y hacerte cargo') lograr('verdad');
     }
     if (tipo === 'colegio') lograr('colegio');
+    if (tipo === 'feria' && d && d.resultado === 'muyBien') lograr('granPresentacion');
     if (tipo === 'finDia') {
       if (A.S.f.desayuno && A.S.f.almorzo && A.S.f.ceno) lograr('tres-comidas');
       if (A.S.f.durmio && !A.S.f.desvelo && A.S.min < 21 * 60) lograr('buenas-noches');

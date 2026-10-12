@@ -343,6 +343,8 @@
     A.sfx('silbato');
     A.decir(A.P, `¡Fiuuu-fiu! ¡${nom()}!`, 1.4, false);
     if (M.modo === 'travesura' || M.modo === 'come' || M.modo === 'juega' || M.modo === 'busca') return true;
+    // fuera de casa, en un lugar donde la cachorra ya va contigo (el parque, o E.conPerro = true): solo silbas
+    if (A.escena.nombre === 'parque' || A.escena.conPerro) return true;
     if (!CASA.includes(A.escena.nombre)) { A.avisar(`${nom()} no te escucha desde aquí arriba.`); return true; }
     if (N.energia < 20) { A.avisar(`${nom()} está agotada: te escuchó, pero sigue durmiendo.`); return true; }
     if (M.D && M.modo === 'sigue') { M.D.salto = 0.55; A.sfx('ladrido'); return true; }
