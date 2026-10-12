@@ -30,13 +30,13 @@
   };
 
   const NOMBRES = {
-    nino: ['Mateo', 'Santiago', 'Lucas', 'Thiago', 'Diego', 'Gael', 'Leo', 'Joaquín'],
-    nina: ['Valentina', 'Camila', 'Sofía', 'Lucía', 'Isabella', 'Mía', 'Emma', 'Renata'],
+    nino: ['Dani', 'Santiago', 'Lucas', 'Thiago', 'Diego', 'Gael', 'Leo', 'Joaquín'],
+    nina: ['Dani', 'Valentina', 'Camila', 'Sofía', 'Lucía', 'Isabella', 'Mía', 'Emma', 'Renata'],
   };
   const MASCOTAS = ['Bruno', 'Toby', 'Luna', 'Rocky', 'Canela', 'Max', 'Nala', 'Coco'];
 
   const BASE = {
-    nombre: 'Mateo', genero: 'nino', edad: 7,
+    nombre: 'Dani', genero: 'nino', edad: 7,
     piel: '#e3b48e', pelo: '#5a3a22', ojos: '#1d2340', peinado: 'corto',
     contextura: 'normal', estatura: 'media',
     pijama: '#f2b950', zapatillas: '#de5546', accesorio: 'ninguno', accColor: '#de5546',

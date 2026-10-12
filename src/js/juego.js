@@ -18,14 +18,14 @@
   })();
   const CFG = NINO ? (FINDE ? {
     meta: 'para el almuerzo', urg: 'Se acaba la mañana',
-    nombre: 'Mateo', inicio: 8 * 60, limite: 12 * 60 + 30,
+    nombre: 'Dani', inicio: 8 * 60, limite: 12 * 60 + 30,
     salida: 'Hoy no hay colegio. El almuerzo es a las 12:30',
     stats: { energia: 60, comida: 45, agua: 50, bano: 40, salud: 85, higiene: 45, animo: 70, motivacion: 50, confianza: 50 },
     piel: '#e3b48e', pelo: '#5a3a22', escala: 0.74,
   } : {
     meta: 'para el bus', urg: 'El bus no espera',
     // 80 minutos en la mañana: alcanza para tus cosas y un rato de juego, si te organizas
-    nombre: 'Mateo', inicio: 6 * 60 + 30, limite: 7 * 60 + 50,
+    nombre: 'Dani', inicio: 6 * 60 + 30, limite: 7 * 60 + 50,
     salida: 'El bus del colegio pasa a las 07:50',
     stats: { energia: 50, comida: 40, agua: 50, bano: 40, salud: 85, higiene: 45, animo: 60, motivacion: 45, confianza: 50 },
     piel: '#e3b48e', pelo: '#5a3a22', escala: 0.74,
@@ -1591,7 +1591,7 @@
     return E;
   }
 
-  // ================================================================ el día completo de Mateo
+  // ================================================================ el día completo del niño o la niña
   // mañana → colegio (aula y recreo) → tarde en casa. Lo que no hiciste antes te alcanza después.
   const FASES = {
     colegio: { inicio: 8 * 60, limite: 13 * 60, meta: 'para la salida del colegio', urg: 'Se acaba el colegio' },
@@ -3102,7 +3102,7 @@
       m.anim = 'caminar'; m.vel = 2.1;
       return;
     }
-    // hablando o esperando: mira a Mateo
+    // hablando o esperando: mira al personaje
     m.root.rotation.y = Math.atan2(P.root.position.x - mp.x, P.root.position.z - mp.z);
     if (v.fase === 'hablar') {
       v.t -= dt; v.maxT -= dt;
