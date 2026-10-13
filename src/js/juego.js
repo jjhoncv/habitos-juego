@@ -9,7 +9,29 @@
   const lerp = (a, b, t) => a + (b - a) * t;
   const hora = (m) => { m = Math.floor(m); return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
   const $ = (s) => document.querySelector(s);
-  const RITMO = window.MODO_JUEGO === 'nino' ? 0.2 : 0.3; // minutos de juego por segundo real mientras caminas
+  const RITMO = window.MODO_JUEGO === 'nino' ? 0.2 : 0.3; // minutos de juego por segundo real mientras caminas (día normal)
+  // duración del día: 'corto' (≈ 20 min reales de la mañana a la noche) o 'normal' (como siempre).
+  // Se guarda en H.progreso ajustes.dia; para niños, por defecto es 'corto'.
+  // En corto el reloj va ×3 (×2 en la mañana antes del bus, para no apurar al que recién despierta).
+  // Las necesidades se gastan por minuto de juego (gastarNecesidades), así que siguen proporcionadas.
+  const DURACIONES = { corto: 3, normal: 1 };
+  let duracionDia = null;
+  function duracion() {
+    if (duracionDia) return duracionDia;
+    let d = null;
+    try { const pr = window.Habitos && window.Habitos.progreso && window.Habitos.progreso.cargar(); d = pr && pr.ajustes && pr.ajustes.dia; } catch (e) { d = null; }
+    duracionDia = DURACIONES[d] ? d : (window.MODO_JUEGO === 'nino' ? 'corto' : 'normal');
+    return duracionDia;
+  }
+  function setDuracion(d) {
+    if (!DURACIONES[d]) return duracion();
+    duracionDia = d;
+    try {
+      const pr = window.Habitos && window.Habitos.progreso;
+      if (pr) pr.guardar({ ajustes: Object.assign({}, pr.cargar().ajustes, { dia: d }) });
+    } catch (e) { /* sin almacenamiento: vale solo esta partida */ }
+    return d;
+  }
 
   // ---------------------------------------------------------------- configuración
   // sábado y domingo (días 6 y 7 de la semana) no hay colegio: la mañana es en casa hasta el almuerzo
@@ -532,7 +554,10 @@
 
   function crearPersona(o) {
     const sm = (c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.8, flatShading: true });
-    const m = { piel: sm(o.piel), camisa: sm(o.camisa), pantalon: sm(o.pantalon), piernas: sm(o.pantalon), zapato: sm(o.zapato || '#3a2a20'), pelo: sm(o.pelo), ojos: sm(o.ojos || '#1d2340') };
+    // la cara usa sombreado suave y un poquito de luz propia: con caras planas, las de abajo
+    // quedaban oscuras (luz del piso) y parecía barba en el niño, mamá y papá
+    const cara = new THREE.MeshStandardMaterial({ color: o.piel, roughness: 0.85, emissive: o.piel, emissiveIntensity: 0.22 });
+    const m = { cara, piel: sm(o.piel), camisa: sm(o.camisa), pantalon: sm(o.pantalon), piernas: sm(o.pantalon), zapato: sm(o.zapato || '#3a2a20'), pelo: sm(o.pelo), ojos: sm(o.ojos || '#1d2340') };
     const root = new THREE.Group();
     const cuerpo = new THREE.Group(); root.add(cuerpo);
     const cadera = new THREE.Group(); cadera.position.y = 0.92; cuerpo.add(cadera);
@@ -554,9 +579,9 @@
       const c = new THREE.Mesh(new THREE.CircleGeometry(r, 7), mat('#5e4a2c')); c.position.set(x, y, 0.146); manchas.add(c);
     });
     manchas.visible = false;
-    const cuello = mk(new THREE.BoxGeometry(0.13, 0.12, 0.13), m.piel); cuello.position.y = 0.68; cadera.add(cuello);
+    const cuello = mk(new THREE.BoxGeometry(0.13, 0.12, 0.13), m.cara); cuello.position.y = 0.68; cadera.add(cuello);
     const cabeza = new THREE.Group(); cabeza.position.y = 0.86; cadera.add(cabeza);
-    const craneo = mk(new THREE.IcosahedronGeometry(0.22, 1), m.piel); craneo.position.y = 0.06; cabeza.add(craneo);
+    const craneo = mk(new THREE.IcosahedronGeometry(0.22, 2), m.cara); craneo.position.y = 0.06; cabeza.add(craneo);
     const peloG = new THREE.Group(); cabeza.add(peloG);
     const accG = new THREE.Group(); cabeza.add(accG);
     [-1, 1].forEach((s) => { const ojo = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.06, 0.02), m.ojos); ojo.position.set(s * 0.08, 0.07, 0.205); cabeza.add(ojo); });
@@ -637,6 +662,7 @@
   function aplicarApariencia(P, p) {
     P.piel = p.piel;
     P.m.piel.color.set(p.piel);
+    P.m.cara.color.set(p.piel); P.m.cara.emissive.set(p.piel);
     P.m.pelo.color.set(p.pelo);
     P.m.ojos.color.set(p.ojos);
     ponerPeinado(P, p.peinado);
@@ -1740,7 +1766,7 @@
     if (NINO && S.fase === 'tarde' && S.min >= 19 * 60 && !S.f.avisoNoche) {
       S.f.avisoNoche = true;
       const sig = manana();
-      avisar(sig === 'fin de la semana' ? 'Ya es de noche. Cuando quieras, ve a dormir a tu cama: mañana papá decide si tu cachorrita se queda.' : `Ya es de noche. Cuando quieras, ve a dormir a tu cama y pasas al ${sig}.`);
+      avisar(sig === 'fin de la semana' ? 'Ya es de noche. Cuando quieras, ve a dormir a tu cama: mañana vemos qué premios ganó tu cachorrita con tus estrellas.' : `Ya es de noche. Cuando quieras, ve a dormir a tu cama y pasas al ${sig}.`);
     }
     if (S.fase === 'tarde' && S.min >= 23 * 60 + 30 && !S.f.durmio) {
       // te quedaste despierto hasta muy tarde: te quedas dormido donde estés
@@ -2889,6 +2915,11 @@
     }
     $('#prompt').hidden = true;
   }
+  // minutos de juego por segundo real, según la duración del día elegida
+  function ritmoReloj() {
+    const k = DURACIONES[duracion()];
+    return RITMO * (k > 1 && NINO && S.fase === 'manana' && !FINDE && !S.f.fueColegio ? Math.min(k, 2) : k);
+  }
   let ritmoExtra = 1;  // un módulo puede pedir correr más rápido (por ejemplo, en el partido)
   function velocidad() { return (NINO ? 2.0 : 2.3) * (0.55 + 0.45 * S.energia / 100) * (0.8 + 0.2 * S.motivacion / 100) * ritmoExtra; }
   function girarHacia(dx, dz, dt) {
@@ -2925,7 +2956,7 @@
       pos.x += dx / d * st; pos.z += dz / d * st;
       girarHacia(dx, dz, dt);
       P.anim = 'caminar'; P.vel = v;
-      S.min += dt * RITMO;
+      S.min += dt * ritmoReloj();
       return;
     }
     a.t += dt * (K.rapido ? 3.5 : 1);
@@ -4050,14 +4081,14 @@
             if (ob) hacer(ob.op, null);
           }
         } else if (P.anim === 'caminar') P.anim = 'quieto';
-        if (!(tutorial && tutorial.pausa) && !bloqueos.size) S.min += dt * RITMO;
+        if (!(tutorial && tutorial.pausa) && !bloqueos.size) S.min += dt * ritmoReloj();
         const it = cercano();
         if (it && !accion && !cargando) { $('#promptTxt').textContent = rotulo(it); $('#prompt').hidden = false; }
         else $('#prompt').hidden = true;
         $('#bAccion').classList.toggle('listo', !!it && !accion);
       } else if (escondido && !visita && !panelAbierto && !accion) {
         // escondido por tu cuenta: el tiempo sigue y puedes salir cuando quieras
-        if (!(tutorial && tutorial.pausa) && !bloqueos.size) S.min += dt * RITMO;
+        if (!(tutorial && tutorial.pausa) && !bloqueos.size) S.min += dt * ritmoReloj();
         $('#promptTxt').textContent = 'Salir del escondite'; $('#prompt').hidden = false;
         $('#bAccion').classList.add('listo');
       } else {
@@ -4235,6 +4266,7 @@
     // según el lado corto: igual de grandes con el iPad parado o acostado (iPhone 1, iPad 11" ≈1.4, iPad 12,9" ≈1.7)
     const k = Math.max(1, Math.min(1.8, Math.min(window.innerWidth, window.innerHeight) / 600));
     raiz.style.setProperty('--k', k.toFixed(3));
+    raiz.style.setProperty('--h', Math.min(k, 1.4).toFixed(3));   // zoom del HUD y paneles (PANTALLA): número plano, más seguro en Safari
   }
   window.addEventListener('resize', escalaTactil);
   escalaTactil();
@@ -4295,6 +4327,7 @@
 
   function empezar() {
     if (jugando) return;
+    duracionDia = null;   // relee la duración elegida en la tarjeta del día
     if (enCapitulo()) TAREAS.unshift([`Darle de comer a ${PERFIL.mascota.nombre}`, () => !!S.f.perroComio, 2, 'tiene hambre']);
     $('#intro').hidden = true;
     $('#hud').hidden = false;
@@ -4342,6 +4375,7 @@
   document.addEventListener('visibilitychange', () => { if (document.hidden) guardarPartida(); });
   window.addEventListener('pagehide', guardarPartida);
   function continuar() {
+    duracionDia = null;   // relee la duración elegida en la tarjeta del día
     const g = partidaDeHoy();
     if (!g || jugando) { empezar(); return; }
     if (enCapitulo()) TAREAS.unshift([`Darle de comer a ${PERFIL.mascota.nombre}`, () => !!S.f.perroComio, 2, 'tiene hambre']);
@@ -4434,6 +4468,9 @@
       partidaDeHoy: () => partidaDeHoy(),
       guardarPartida: () => guardarPartida(),
       borrarPartida: () => borrarPartida(),
+      // duración del día: 'corto' (≈ 20 min) o 'normal'. setDuracion la guarda en progreso.ajustes.dia
+      setDuracion: (d) => setDuracion(d),
+      duracion: () => duracion(),
       perroEnCuarto(on) {
         perroCuarto = !!on;
         if (!jugando && !cine && escena && escena.nombre === 'dormitorio') { construir('dormitorio', null); acostar(); }
@@ -4814,6 +4851,7 @@
     evento,
     enfocar: (f) => { enfoque = f || null; },
     ritmo: (f) => { ritmoExtra = f || 1; },
+    duracionDia: () => duracion(), setDuracion: (d) => setDuracion(d),
     bloquear: (motivo, si) => { if (si) bloqueos.add(motivo); else bloqueos.delete(motivo); },
     box, cil, bola, mat, matB, crearPerro, crearPersona, crearMama, crearPapa, crearAbuela, ponerProp, vestir,
     moverEn, etiquetaInter, crearEtiquetas, refrescar, emitir, cabezaMundo,

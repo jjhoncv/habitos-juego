@@ -206,3 +206,72 @@ html.toque:has(#lista:not(.plegada):not([hidden])) .crecer-hud { display: none !
   .toque .b-silbar { left: calc(26px + env(safe-area-inset-left, 0px)); bottom: calc(232px + env(safe-area-inset-bottom, 0px)); }
   /* el marcador del fútbol se queda arriba (abajo están los botones del partido, ya agrandados) */
 }
+
+/* ================= TABLET (iPad 11" y 12,9", parado y acostado; también el visor de claude.ai ~966×1280)
+   El texto del HUD crece con la pantalla: zoom: var(--h), con --h = min(--k, 1.4) (juego.css). Todos los iPad
+   tienen los mismos puntos por pulgada, así que con 1.4 la letra se ve igual de grande en el de 11" y en el
+   de 12,9"; el grande gana espacio. Los controles de abajo crecen con --k (más arriba).
+   OJO con zoom: los px se multiplican, los % no, y en Chrome los vw/vh SÍ: dentro de algo con zoom usa % y px.
+   El reloj, la lista y las barras van en una grilla (.hud) que deja libre abajo el lugar de los controles:
+   la lista se encoge sola (y se desliza con el dedo) si no cabe. */
+@media (min-width: 700px) and (min-height: 600px) {
+  .toque .hud {
+    display: grid; grid-template-columns: auto; grid-template-rows: auto minmax(0, auto);
+    align-content: start; align-items: start; column-gap: calc(12px * var(--h)); row-gap: calc(10px * var(--h));
+    padding: calc(12px * var(--h) + env(safe-area-inset-top, 0px)) calc(16px * var(--h) + env(safe-area-inset-right, 0px))
+             calc(234px * var(--k, 1) + env(safe-area-inset-bottom, 0px)) calc(16px * var(--h) + env(safe-area-inset-left, 0px));
+  }
+  .toque .tiempo, .toque .stats, .toque .lista { position: static; zoom: var(--h); }
+  /* acostada, las barras quedan fuera de la grilla, arriba a la derecha */
+  .toque .stats { position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); right: calc(16px + env(safe-area-inset-right, 0px)); }
+  .toque .tiempo { grid-area: 1 / 1; width: 400px; }
+  .toque .lista { grid-area: 2 / 1; justify-self: start; box-sizing: border-box; width: 324px; max-height: 100%; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+  .toque .lista li { gap: 8px; }
+  /* barras en dos columnas (sin la palabra del estado: el color y el número ya lo dicen) */
+  .toque .stats { width: 356px; grid-template-columns: 1fr 1fr; column-gap: 12px; }
+  .toque .stats .logros-fila, .toque .stats .dinero { grid-column: 1 / -1; }
+  .toque .s-estado { display: none; }
+
+  .toque .aviso, .toque .logros-cola, .toque .panel { zoom: var(--h); }
+  .toque .aviso { top: calc(130px + env(safe-area-inset-top, 0px)); width: min(440px, calc(100% - 32px)); }
+  .toque .aviso div { font-size: 15px; }
+  .toque .logros-cola { width: min(440px, calc(100% - 32px)); }
+  .toque .panel { width: min(560px, calc(100% - 32px)); max-height: calc(100% - 100px); }
+  .toque .op-n { font-size: 14px; }
+  .toque .chip { font-size: 13px; }
+  /* etiquetas sobre los objetos y burbujas de diálogo: juego.js las ubica en px de pantalla, así que
+     no llevan zoom; crecen con el tamaño de letra */
+  .toque .etq-obj { font-size: calc(12px * var(--h)); gap: calc(6px * var(--h)); padding: calc(2px * var(--h)) calc(4px * var(--h)) calc(2px * var(--h)) calc(10px * var(--h)); }
+  .toque .etq-obj .m { font-size: calc(13px * var(--h)); padding: 1px calc(8px * var(--h)) 1px calc(5px * var(--h)); }
+  .toque .etq-obj .m svg { width: calc(13px * var(--h)); height: calc(13px * var(--h)); }
+  .toque .etq { font-size: calc(13px * var(--h)); padding: 1px calc(9px * var(--h)); }
+  .toque .burbuja { font-size: calc(14px * var(--h)); max-width: min(calc(260px * var(--h)), 70vw); padding: calc(7px * var(--h)) calc(11px * var(--h)); }
+  .toque .vuela b { font-size: calc(19px * var(--h)); }
+  .toque .vuela .ico { width: calc(26px * var(--h)); height: calc(26px * var(--h)); }
+  .toque .vuela .ico svg { width: calc(15px * var(--h)); height: calc(15px * var(--h)); }
+  /* el mapa en grande ocupa casi toda la pantalla */
+  .toque .mapa.grande { width: min(calc(100% - 32px), calc((100vh - 48px) * 1.25)); }
+}
+
+/* ---------- tablet parada: reloj a lo ancho; debajo las barras en 3 columnas y la lista a lo ancho con las
+   tareas en 2 columnas. Abajo queda libre para el álbum, Silbar y el cartelito Usar (que baja un poco). */
+@media (min-width: 700px) and (min-height: 600px) and (orientation: portrait) {
+  .toque .hud { grid-template-columns: 1fr; grid-template-rows: auto auto minmax(0, auto); padding-bottom: calc(310px * var(--k, 1) + env(safe-area-inset-bottom, 0px)); }
+  .toque .tiempo { grid-area: 1 / 1; width: auto; }
+  .toque .stats { position: static; grid-area: 2 / 1; width: auto; grid-template-columns: 1fr 1fr 1fr; gap: 5px 14px; padding: 7px 10px; }
+  .toque .lista { grid-area: 3 / 1; width: auto; justify-self: stretch; }
+  .toque .lista ul { grid-template-columns: 1fr 1fr; column-gap: 16px; }
+  .toque .stat { grid-template-columns: 30px 1fr; gap: 7px; }
+  .toque .stat .ico { width: 30px; height: 30px; }
+  .toque .stat .ico svg { width: 17px; height: 17px; }
+  .toque .s-barra { height: 8px; margin-top: 2px; }
+  .toque .logros-fila { padding-top: 4px; }
+  .toque .prompt { bottom: calc(182px + env(safe-area-inset-bottom, 0px)); }
+  .toque .progreso { bottom: calc(182px + env(safe-area-inset-bottom, 0px)); width: 300px; }
+}
+
+/* ---------- tablet acostada: el cartelito Usar y la barra de progreso suben sobre la fila de abajo
+   (centrados chocaban con el álbum cuando el nombre es largo, p. ej. "Plato de Molly") */
+@media (min-width: 700px) and (min-height: 600px) and (orientation: landscape) {
+  .toque .prompt, .toque .progreso { bottom: calc(100px + env(safe-area-inset-bottom, 0px)); }
+}

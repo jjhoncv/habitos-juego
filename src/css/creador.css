@@ -102,3 +102,31 @@
   .cr-pie { padding: 10px 16px 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .cr-color { transition: none; } }
+
+/* ---------- tablet (iPad): panel más grande y botones fáciles de tocar (≥ 48 px reales).
+   Va con (any-pointer: coarse) porque el creador sale antes del primer toque. El panel lleva zoom: --h
+   (juego.js, lado corto / 600): las medidas de aquí son "sin zoom"; con zoom, nunca vw/vh adentro. */
+@media (any-pointer: coarse) and (min-width: 700px) and (min-height: 600px) {
+  .cr-panel { zoom: var(--h); width: min(470px, calc(100% - 32px)); }
+  .cr-girar { padding-left: calc(502px * var(--h)); }
+  .cr-girar small { font-size: calc(14px * var(--h)); }
+  .cr-placa { font-size: calc(22px * var(--h)); }
+  .cr-tabs { gap: 4px; }
+  .cr-tabs button { font-size: 16px; padding: 12px 12px; }
+  .cr-cuerpo { gap: 16px; }
+  .cr-etq { font-size: 13px; }
+  .cr-nota { font-size: 15px; }
+  .cr-nombre input { padding: 8px 12px; }
+  .cr-dado { width: 52px; }
+  .cr-colores { gap: 12px; }
+  .cr-color { width: 46px; height: 46px; }
+  .cr-ops { gap: 8px; }
+  .cr-op { font-size: 17px; padding: 10px 16px; min-height: 44px; }
+  .cr-tarjeta { font-size: 14px; }
+  .cr-tarjeta b { font-size: 19px; }
+}
+/* tablet parada: el panel va abajo a lo ancho y el personaje se ve arriba */
+@media (any-pointer: coarse) and (min-width: 700px) and (min-height: 600px) and (orientation: portrait) {
+  .cr-panel { top: auto; left: 16px; right: 16px; width: auto; height: 60%; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+  .cr-girar { padding: 0 16px calc(60vh + 30px * var(--h) + env(safe-area-inset-bottom, 0px)); }
+}

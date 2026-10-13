@@ -46,6 +46,122 @@
   }
   const corazones = () => { const n = Math.round(vinculo / 20); return '♥'.repeat(n) + '♡'.repeat(5 - n); };
 
+  // ---------- lo que lleva puesto: collar (color) y ropita ('panuelo' | 'gorrito'); se guarda entre días
+  const pr0 = H.progreso ? H.progreso.cargar() : {};
+  const LOOK = { collar: typeof pr0.collar === 'string' ? pr0.collar : null, ropa: typeof pr0.ropaPerro === 'string' ? pr0.ropaPerro : null };
+  const perros = new Set();   // modelos de la cachorrita (los de perro.js y los que crean otros módulos)
+  const smat = (c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.7, flatShading: true });
+  function vestirModelo(D) {
+    if (!D || !D.cabeza) return;
+    ['collar', 'ropa'].forEach((k) => { if (D['_' + k]) { D['_' + k].parent.remove(D['_' + k]); D['_' + k] = null; } });
+    if (LOOK.collar) {
+      // una banda que asoma bajo la barbilla y a los costados del cuello (va en la cabeza para moverse con ella)
+      const g = new THREE.Group(); g.name = 'collar'; g.position.set(0, -0.125, -0.05); g.rotation.x = -0.25;
+      const aro = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.03, 6, 18), smat(LOOK.collar));
+      aro.scale.set(1, 0.55, 1.4); g.add(aro);
+      const placa = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.015, 10), smat('#f2c94c'));
+      placa.rotation.x = PI / 2; placa.position.set(0, -0.11, 0.035); g.add(placa);
+      if (LOOK.collar === '#3f5bd1') [-2, -1, 1, 2].forEach((i) => {   // collar con estrellas
+        const a = -PI / 2 + i * 0.6, st = new THREE.Mesh(new THREE.OctahedronGeometry(0.025), smat('#ffe066'));
+        st.position.set(Math.cos(a) * 0.155, Math.sin(a) * 0.155 * 0.55, 0.03); g.add(st);
+      });
+      D.cabeza.add(g); D._collar = g;
+    }
+    if (LOOK.ropa === 'panuelo') {
+      const g = new THREE.Group(); g.name = 'ropa';
+      const tri = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.16, 3), smat('#f28c38'));
+      tri.rotation.x = PI; tri.position.set(0, -0.2, -0.02); g.add(tri);
+      D.cabeza.add(g); D._ropa = g;
+    } else if (LOOK.ropa === 'gorrito') {
+      const g = new THREE.Group(); g.name = 'ropa';
+      const cono = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.2, 10), smat('#8f73cf'));
+      cono.position.set(0, 0.22, -0.01); g.add(cono);
+      const pom = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), smat('#fff'));
+      pom.position.set(0, 0.33, -0.01); g.add(pom);
+      D.cabeza.add(g); D._ropa = g;
+    }
+  }
+  // todos los modelos de la cachorrita (también los que crean dia3, dia6, sotano, piscina…) salen con lo que lleva puesto
+  const crearPerroMotor = A.crearPerro;
+  A.crearPerro = function (color) {
+    const D = crearPerroMotor.apply(this, arguments);
+    if (A.perfil && A.perfil.mascota && color === A.perfil.mascota.color) { D.esMascota = true; perros.add(D); vestirModelo(D); }
+    return D;
+  };
+  function vestirTodos() { perros.forEach((D) => { if (D.root.parent) vestirModelo(D); else perros.delete(D); }); }
+  function ponerCollar(color) {
+    LOOK.collar = color || null;
+    if (H.progreso) H.progreso.guardar({ collar: LOOK.collar });
+    vestirTodos();
+    return LOOK.collar;
+  }
+  function ponerRopa(id) {
+    LOOK.ropa = id === 'panuelo' || id === 'gorrito' ? id : null;
+    if (H.progreso) H.progreso.guardar({ ropaPerro: LOOK.ropa });
+    vestirTodos();
+    return LOOK.ropa;
+  }
+  const tienePremio = (id) => !!(H.premios && H.premios.tiene(id));
+
+  // ---------- la cachorrita como espejo: su ánimo de hoy sale de cómo la cuidaste ayer; si no jugaste en días, te extrañó
+  const hoyISO = H.progreso && H.progreso.hoyISO ? H.progreso.hoyISO() : '';
+  const diasSinJugar = H.progreso && pr0.ultimaVisita ? Math.max(0, H.progreso.diasEntre(pr0.ultimaVisita, hoyISO)) : 0;
+  if (H.progreso && A.perfil) H.progreso.guardar({ ultimaVisita: hoyISO });
+  let animo = typeof pr0.perroAnimo === 'number' ? Math.max(0, Math.min(100, pr0.perroAnimo)) : 70;
+  if (diasSinJugar >= 2) animo = Math.max(animo, 85);   // volviste: ¡está feliz de verte!
+  const HOY = { jugo: 0, caricias: 0, salio: false, trucos: 0, saludo: false };
+  // al terminar el día: cómo la cuidaste hoy → su ánimo de mañana (nunca baja de 35)
+  function cerrarDia() {
+    const f = A.S.f || {};
+    let a = 45;
+    if (f.perroComio) a += 25;
+    a += Math.min(15, HOY.jugo * 6 + HOY.caricias * 3 + HOY.trucos * 3);
+    if (HOY.salio || f.casitaLimpia) a += 10;
+    a = Math.max(35, Math.min(100, Math.round(a)));
+    if (H.progreso) H.progreso.guardar({ perroAnimo: a });
+    return a;
+  }
+  A.alEvento((tipo) => {
+    if (tipo === 'gol' || tipo === 'piscinaReto' || tipo === 'sotanoControl') HOY.jugo++;
+    if (tipo === 'escondidas') HOY.jugo++;
+  });
+  // te saluda en la mañana (o al volver al juego), según su ánimo
+  function saludar() {
+    const D = M.D, st = A.estado();
+    if (HOY.saludo || !D || !st.jugando || st.panel || st.accion || st.visita || st.cine || st.tutorial || st.cargando || A.S.fase === 'colegio' || A.S.fase === 'prologo') return;
+    const q = D.root.position, p = A.P.root.position;
+    if (Math.hypot(p.x - q.x, p.z - q.z) > 2.6 || A.P.cuerpo.rotation.x !== 0) return;
+    HOY.saludo = true;
+    const n = nom();
+    let txt;
+    if (diasSinJugar >= 2) txt = `¡${n} te extrañó muchísimo! Salta y mueve la cola: "¡Volviste!"`;
+    else if (animo >= 80) txt = `${n} amaneció feliz: ayer la cuidaste muy bien. ¡Buenos días!`;
+    else if (animo >= 55) txt = `${n} te da los buenos días moviendo la cola.`;
+    else txt = `${n} te mira tranquilita. Hoy quiere comer rico y jugar contigo.`;
+    if (animo >= 55 || diasSinJugar >= 2) { D.anim = 'feliz'; D.salto = 0.55; A.sfx('ladrido'); if (diasSinJugar >= 2) setTimeout(() => { if (M.D) M.D.salto = 0.55; A.sfx('ladrido'); }, 700); }
+    A.avisar(txt, 'bien');
+    A.evento('perroSaludo', { animo, diasSinJugar });
+  }
+
+  // ---------- trucos: dar la patita, saludar, rodar
+  const TR = { tipo: null, t: 0 };
+  function hacerTruco(tipo) { TR.tipo = tipo; TR.t = 0; HOY.trucos++; if (M.D) M.D.anim = 'feliz'; }
+  A.alActualizar((dt) => {
+    const D = M.D;
+    if (!TR.tipo) return;
+    if (!D) { TR.tipo = null; return; }
+    TR.t += dt;
+    if (TR.tipo === 'rodar') {
+      D.cuerpo.rotation.z = Math.min(1, TR.t / 1.1) * 2 * PI;
+      if (TR.t >= 1.1) { D.cuerpo.rotation.z = 0; TR.tipo = null; D.salto = 0.55; }
+    } else {
+      // patita / saludar: levanta la pata de adelante (saludar la mueve)
+      const pata = D.patas[0];
+      pata.rotation.x = TR.tipo === 'saludar' ? -1.5 + Math.sin(TR.t * 14) * 0.35 : -1.2;
+      if (TR.t >= 1.4) TR.tipo = null;
+    }
+  });
+
   function crear(E, x, z, ry) {
     const D = A.crearPerro(A.perfil.mascota.color);
     D.voz = 'perro';
@@ -98,7 +214,7 @@
         const ops = [{
           texto: 'Acariciarla', nota: 'Le encanta, y a ti también te calma.', min: 2, ef: { animo: 6 }, anim: 'agacharse', dur: 1.8, esfuerzo: false,
           progreso: `Acariciando a ${nom()}`,
-          alTerminar: () => { cambiarVinculo(3); if (M.D) { M.D.anim = 'feliz'; M.D.salto = 0.55; } A.sfx('ladrido'); },
+          alTerminar: () => { HOY.caricias++; cambiarVinculo(3); if (M.D) { M.D.anim = 'feliz'; M.D.salto = 0.55; } A.sfx('ladrido'); },
         }];
         const agotada = N.energia < 25 ? `${nom()} está agotada: déjala descansar un rato.` : null;
         if (A.escena.nombre === 'jardin') ops.push({
@@ -107,14 +223,29 @@
             { anim: 'senalar', dur: 0.6, min: 0, progreso: '¡Busca!', alTerminar: lanzarPalo },
             { anim: 'quieto', dur: 4.2, min: 5, progreso: `${nom()} va por el palo` },
           ],
-          alTerminar: () => { cambiarVinculo(3); N.energia = Math.max(0, N.energia - 8); A.habito(`Jugar con ${nom()}`); },
+          alTerminar: () => { HOY.jugo++; cambiarVinculo(3); N.energia = Math.max(0, N.energia - 8); A.habito(`Jugar con ${nom()}`); },
         });
-        ops.push(vinculo >= 40 ? {
+        // la patita: la aprende cuando confía mucho en ti, o la desbloquean tus estrellas (premio 'truco-patita')
+        const sabePatita = vinculo >= 40 || tienePremio('truco-patita');
+        ops.push(sabePatita ? {
           texto: 'Pedirle la patita', nota: 'Ya aprendió: te da la patita.', min: 1, ef: { animo: 4 }, anim: 'agacharse', dur: 1.4, esfuerzo: false, progreso: '¡La patita!',
-          alTerminar: () => { cambiarVinculo(1); if (M.D) { M.D.anim = 'feliz'; M.D.salto = 0.55; } A.sfx('ladrido'); A.decir(A.P, `¡Muy bien, ${nom()}!`, 1.8); },
+          alTerminar: () => { cambiarVinculo(1); hacerTruco('patita'); A.sfx('ladrido'); A.decir(A.P, `¡Muy bien, ${nom()}!`, 1.8); },
         } : {
           texto: 'Enseñarle a dar la patita', nota: `Aprende cuando confía mucho en ti (${corazones()}).`, min: 3, ef: { animo: 3 }, anim: 'agacharse', dur: 2.0, esfuerzo: false, progreso: 'Enseñándole la patita',
-          alTerminar: () => { cambiarVinculo(2); A.decir(A.P, vinculo >= 40 ? '¡Me dio la patita! ¡Aprendió!' : 'Casi… todavía no entiende. Otro día.', 2.4); },
+          alTerminar: () => {
+            cambiarVinculo(2);
+            const aprendio = vinculo >= 40;
+            if (aprendio && H.premios) H.premios.dar('truco-patita', 'vinculo');
+            A.decir(A.P, aprendio ? '¡Me dio la patita! ¡Aprendió!' : 'Casi… todavía no entiende. Otro día.', 2.4);
+          },
+        });
+        if (tienePremio('truco-saludar')) ops.push({
+          texto: 'Pedirle que salude', nota: 'Levanta la patita y la mueve: ¡hola!', min: 1, ef: { animo: 4 }, anim: 'saludar', dur: 1.4, esfuerzo: false, progreso: '¡Saluda!',
+          alTerminar: () => { cambiarVinculo(1); hacerTruco('saludar'); A.sfx('ladrido'); A.decir(A.P, `¡Hola, ${nom()}!`, 1.8); },
+        });
+        if (tienePremio('truco-rodar')) ops.push({
+          texto: 'Pedirle que ruede', nota: 'Da una vuelta en el piso. ¡Qué graciosa!', min: 1, ef: { animo: 5 }, anim: 'senalar', dur: 1.6, esfuerzo: false, progreso: '¡Rueda!',
+          alTerminar: () => { cambiarVinculo(1); hacerTruco('rodar'); A.sfx('ladrido'); A.decir(A.P, `¡Bravo, ${nom()}!`, 1.8); },
         });
         if (A.escena.nombre === 'jardin' && H.futbol) {
           H.futbol.opcionesJuego(false).forEach((o) => ops.push(o));
@@ -199,6 +330,7 @@
     }
     const D = M.D;
     if (!D) return;
+    if (!HOY.saludo) saludar();
     if (M.inter) {
       const q = D.root.position, pp = A.P.root.position, vx = pp.x - q.x, vz = pp.z - q.z, l = Math.hypot(vx, vz) || 1;
       M.inter.en[0] = q.x + vx / l * 0.65; M.inter.en[1] = q.z + vz / l * 0.65;
@@ -310,6 +442,20 @@
 
   // ---------- su casita en el jardín
   function casita(E) {
+    // premios de la casita: adornos (casita-linda) y banderines
+    // (la casita del motor: centro en (3.3, -2.3), frente en z ≈ -1.8)
+    if (tienePremio('casita-linda')) {
+      A.box(E.scene, 0.1, 0.08, 1.2, '#f2c94c', CASITA.x, 1.33, -2.3);
+      A.box(E.scene, 0.3, 0.12, 0.03, '#e46d7b', CASITA.x, 0.68, -1.77, { sombra: false });
+      [-0.75, 0.75].forEach((dx) => { A.cil(E.scene, 0.1, 0.08, 0.16, '#c56b4a', CASITA.x + dx, 0.08, -1.65); A.bola(E.scene, 0.1, dx < 0 ? '#e46d7b' : '#f2c94c', CASITA.x + dx, 0.22, -1.65); });
+    }
+    if (tienePremio('banderines')) {
+      ['#de5546', '#f2c94c', '#7cc6f2', '#7bbf5a', '#8f73cf'].forEach((c, i) => {
+        const b = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.13, 3), smat(c));
+        b.rotation.x = PI; b.position.set(CASITA.x - 0.5 + i * 0.25, 0.86 - Math.sin((i / 4) * PI) * 0.06, -1.72);
+        E.scene.add(b);
+      });
+    }
     E.inters.push(A.etiquetaInter('Casita del perro', [CASITA.x, -1.15], [CASITA.x, -2.3], 0.85, {
       activo: () => !A.estado().visita,
       abrir: () => {
@@ -523,6 +669,14 @@
     cambiarVinculo,
     get necesidades() { return N; },
     silbar,
+    get animo() { return animo; },
+    get diasSinJugar() { return diasSinJugar; },
+    get collar() { return LOOK.collar; },
+    get ropa() { return LOOK.ropa; },
+    ponerCollar,
+    ponerRopa,
+    cerrarDia,
+    hacerTruco,
     cansar(e, c) { N.energia = Math.max(0, N.energia - e); N.comida = Math.max(0, N.comida - (c || 0)); },
     // para las pruebas: la próxima oportunidad hace una travesura
     forzarTravesura() { proxima = 0; faseTrav = A.S.fase; M.entrada = -99; hechasHoy = { manana: 0, tarde: 0 }; },
@@ -535,4 +689,12 @@
       return { lugar: 'dormitorio', x: CAMA.x, z: CAMA.z };
     },
   };
+
+  // un premio nuevo: se celebra en el juego y, si es un collar o ropita y no lleva nada, se lo pone
+  if (H.premios) H.premios.alGanar((pz, origen) => {
+    if (pz.tipo === 'collar' && !LOOK.collar) ponerCollar(pz.color);
+    if (pz.tipo === 'ropa' && !LOOK.ropa) ponerRopa(pz.id);
+    if (A.estado().jugando && origen !== 'estrellas' && origen !== 'sorpresa') A.banner('bien', `Premio para ${nom()}`, pz.nombre);
+    A.evento('premio', { id: pz.id, origen });
+  });
 })();

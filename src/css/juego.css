@@ -15,6 +15,8 @@
   --f-texto: 'Nunito Sans', system-ui, -apple-system, sans-serif;
   --f-reloj: 'Share Tech Mono', ui-monospace, 'SF Mono', monospace;
   --sombra: 3px 3px 0 var(--tinta);
+  /* tablet: el HUD y las hojas crecen con --h (juego.js pone --k = lado corto / 600, de 1 a 1.8) */
+  --h: min(var(--k, 1), 1.4);
   color-scheme: light;
 }
 
@@ -656,3 +658,13 @@ kbd {
 .eslabon.mal { background: #fbe3df; color: #8a2a1d; }
 .flecha { font-weight: 900; color: var(--tinta-2); }
 .proy ul.hechos { margin-top: -4px; }
+
+/* ---------- tablet (iPad): las hojas a pantalla completa (tarjeta del día, resumen, álbum, examen…) crecen
+   con la pantalla. Va con (any-pointer: coarse) y no con .toque porque la tarjeta del día sale antes del
+   primer toque. --h: ver :root. Con zoom, nunca vw/vh adentro. */
+@media (any-pointer: coarse) and (min-width: 700px) and (min-height: 600px) {
+  .pantalla > .hoja { zoom: var(--h); }
+  .hoja h1 { font-size: 44px; }
+  /* el álbum se desliza por dentro: su alto máximo es la pantalla (en Chrome los vh también llevan zoom) */
+  .pantalla > .al-hoja { max-height: calc(100vh / var(--h) - 40px); }
+}

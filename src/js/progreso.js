@@ -6,7 +6,7 @@
   const CLAVE = 'habitos-progreso-v1';
   const BASE = { capitulo: 1, dia: 1, prologo: false, tutorial: false, diario: [] };
   const DIAS = 7;            // días del trato con papá
-  const PARA_GANAR = 14;     // estrellas (de 21) para que el cachorro se quede
+  const PARA_GANAR = 14;     // (histórico) ya no decide nada: la cachorrita SIEMPRE se queda; las estrellas desbloquean premios
 
   // Metas de cada día del capítulo 1: [id, texto]
   const esFinde = (dia) => (dia - 1) % 7 >= 5;   // días 6 y 7: sábado y domingo
@@ -71,9 +71,64 @@
     return guardar({ diario, dia: dia + 1 });
   }
   function totalEstrellas(p) { return (p || cargar()).diario.reduce((t, d) => t + (d.estrellas || 0), 0); }
-  function repetirSemana() { return guardar({ dia: 1, diario: [] }); }
+  // estrellas de todas las semanas (las de semanas pasadas se guardan al empezar otra semana)
+  function estrellasAcumuladas(p) { p = p || cargar(); return (p.estrellasPrevias || 0) + totalEstrellas(p); }
+  function repetirSemana() { return guardar({ dia: 1, diario: [], estrellasPrevias: estrellasAcumuladas(), premiosSemana: [] }); }
+  // fecha local del día (AAAA-MM-DD) y días entre dos fechas
+  const hoyISO = (d) => { d = d || new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+  function diasEntre(a, b) {
+    const t = (s) => { const [y, m, d] = String(s).split('-').map(Number); return Date.UTC(y, (m || 1) - 1, d || 1); };
+    if (!a || !b) return 0;
+    const n = Math.round((t(b) - t(a)) / 864e5);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  // ---------- premios de la cachorrita: se desbloquean con las estrellas acumuladas (o de regalo)
+  // estrellas = cuántas estrellas acumuladas lo desbloquean (null = solo de regalo)
+  const PREMIOS = [
+    { id: 'truco-patita', nombre: 'Truco: dar la patita', tipo: 'truco', estrellas: 3 },
+    { id: 'collar-rojo', nombre: 'Collar rojo', tipo: 'collar', color: '#de5546', estrellas: 5 },
+    { id: 'panuelo', nombre: 'Pañuelo de colores', tipo: 'ropa', estrellas: 8 },
+    { id: 'truco-saludar', nombre: 'Truco: saludar', tipo: 'truco', estrellas: 10 },
+    { id: 'collar-celeste', nombre: 'Collar celeste', tipo: 'collar', color: '#7cc6f2', estrellas: 13 },
+    { id: 'casita-linda', nombre: 'Casita más linda', tipo: 'casita', estrellas: 16 },
+    { id: 'truco-rodar', nombre: 'Truco: rodar', tipo: 'truco', estrellas: 19 },
+    { id: 'gorrito', nombre: 'Gorrito', tipo: 'ropa', estrellas: 23 },
+    { id: 'collar-estrellas', nombre: 'Collar con estrellas', tipo: 'collar', color: '#3f5bd1', estrellas: 27 },
+    { id: 'banderines', nombre: 'Banderines para su casita', tipo: 'decoracion', estrellas: 32 },
+  ];
+  const oyentes = [];
+  const tienePremio = (id) => !!(cargar().premios || {})[id];
+  function darPremio(id, origen) {
+    const def = PREMIOS.find((x) => x.id === id);
+    if (!def || tienePremio(id)) return false;
+    const p = cargar();
+    const premios = Object.assign({}, p.premios || {}, { [id]: true });
+    const semana = (Array.isArray(p.premiosSemana) ? p.premiosSemana : []).concat([id]);
+    guardar({ premios, premiosSemana: semana });
+    const info = Object.assign({}, def, { tiene: true });
+    oyentes.forEach((fn) => { try { fn(info, origen || ''); } catch (e) { console.warn('premios.alGanar', e); } });
+    return true;
+  }
+  // da los premios que ya alcanzan las estrellas acumuladas; devuelve los nuevos
+  function revisarPremios(extra) {
+    const total = estrellasAcumuladas() + (extra || 0);
+    return PREMIOS.filter((x) => x.estrellas != null && x.estrellas <= total && !tienePremio(x.id) && darPremio(x.id, 'estrellas'))
+      .map((x) => Object.assign({}, x, { tiene: true }));
+  }
+  const premios = {
+    lista: () => { const t = cargar().premios || {}; return PREMIOS.map((x) => Object.assign({}, x, { tiene: !!t[x.id] })); },
+    tiene: tienePremio,
+    dar: darPremio,
+    alGanar: (fn) => { if (typeof fn === 'function') oyentes.push(fn); },
+    revisar: revisarPremios,
+    // el próximo premio que se gana con estrellas (o null)
+    siguiente: (extra) => { const total = estrellasAcumuladas() + (extra || 0); const x = PREMIOS.find((q) => q.estrellas != null && !tienePremio(q.id) && q.estrellas > total); return x ? Object.assign({ faltan: x.estrellas - total }, x) : null; },
+    deLaSemana: () => { const p = cargar(), s = Array.isArray(p.premiosSemana) ? p.premiosSemana : []; return PREMIOS.filter((x) => s.includes(x.id)).map((x) => Object.assign({}, x, { tiene: true })); },
+  };
 
   window.Habitos = Object.assign(window.Habitos || {}, {
-    progreso: { cargar, guardar, reiniciar, metas, esFinde, semana, estrellasDe, terminarDia, totalEstrellas, repetirSemana, DIAS, PARA_GANAR },
+    progreso: { cargar, guardar, reiniciar, metas, esFinde, semana, estrellasDe, terminarDia, totalEstrellas, estrellasAcumuladas, repetirSemana, hoyISO, diasEntre, DIAS, PARA_GANAR },
+    premios,
   });
 })();

@@ -166,3 +166,30 @@
 /* probar el sonido */
 .cap-sonido { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0 0 12px; }
 .cap-sonido p { margin: 0; flex: 1 1 240px; font-size: 13px; font-weight: 700; color: var(--tinta-2); }
+
+/* ---------- tarjeta del día: duración del día, nota de Molly, premios y privacidad (marcado de historia.js) */
+.cap-ajustes { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 12px; }
+.cap-ajustes-t { font-size: 14px; font-weight: 800; color: var(--tinta-2); }
+.cap-dur { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.btn.cap-dur-b { font-size: 15px; padding: 5px 14px; border-radius: 999px; box-shadow: 2px 2px 0 var(--tinta); }
+.btn.cap-dur-b.activo { background: var(--menta); color: #fff; }
+.cap-pie { margin: 14px 0 0; text-align: right; }
+.cap-privacidad { font-size: 13px; font-weight: 600; color: var(--tinta-2); }
+.cap-espejo { margin: -2px 0 10px; padding: 8px 12px; border-radius: 10px; background: #f1ecfc; border: 2px solid var(--lila); font-weight: 700; line-height: 1.35; }
+.cap-espejo b { font-family: var(--f-display); }
+.r-premio { margin: -2px 0 10px; padding: 8px 12px; border-radius: 10px; background: #e2f3fb; border: 2px solid var(--cielo); font-weight: 700; line-height: 1.35; }
+.r-premio.sig { background: #f1ecfc; border-color: var(--lila); }
+.r-premio b { font-family: var(--f-display); }
+.metas li.premio { padding-left: 0; }
+.metas li.premio::before { content: none; display: none; }
+.metas li.premio span { display: inline-block; width: 26px; text-align: center; }
+
+/* ---------- tablet (iPad): diálogos, guía y botón Saltar crecen con la pantalla (zoom: --h, ver juego.css) */
+@media (any-pointer: coarse) and (min-width: 700px) and (min-height: 600px) {
+  .cine-dialogo, .cine-saltar, .guia { zoom: var(--h); }
+  .cine-dialogo { bottom: calc(7% + 14px); }
+  .cine-saltar { top: calc(5% + 10px); }
+  .ojos .cine-saltar { top: 16px; }
+  .ojos-reloj { zoom: var(--h); }
+  .guia { top: calc(128px + env(safe-area-inset-top, 0px)); }
+}

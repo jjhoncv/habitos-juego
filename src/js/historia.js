@@ -58,7 +58,7 @@
         { t: 'mirar', quien: 'yo', a: 'papa' },
         { t: 'mirar', quien: 'perro', a: 'papa' },
         { t: 'decir', quien: 'papa', nombre: 'Papá', texto: 'Mmm… un perro es mucha responsabilidad. Hay que darle de comer, pasearlo, cuidarlo…', anim: 'jarras' },
-        { t: 'decir', quien: 'papa', nombre: 'Papá', texto: `Te propongo un trato: si en una semana demuestras que puedes cuidar a ${m} y tus cosas, ${m} se queda.`, anim: 'senalar' },
+        { t: 'decir', quien: 'papa', nombre: 'Papá', texto: `Te propongo un trato: cada día que cuides a ${m} y tus cosas, ganas estrellas. ¡Y con las estrellas, ${m} gana premios!`, anim: 'senalar' },
         { t: 'elegir', opciones: ['¡Trato hecho, papá!', `¡Lo prometo! Voy a cuidar a ${m}.`] },
         { t: 'saltar', quien: 'perro' },
         { t: 'sfx', n: 'ladrido' },
@@ -95,6 +95,13 @@
 <span class="solo-toque">Toca una opción para elegir</span>
     <span>Con sonido y voces: sube el volumen</span>
   </div>
+  <div class="cap-ajustes" id="capAjustes">
+    <span class="cap-ajustes-t">¿Cuánto dura el día?</span>
+    <span class="cap-dur" role="group" aria-label="Duración del día">
+      <button class="btn sec cap-dur-b" type="button" id="capDiaCorto" data-dia="corto" aria-pressed="false">Día corto (20 min)</button>
+      <button class="btn sec cap-dur-b" type="button" id="capDiaLargo" data-dia="normal" aria-pressed="false">Día largo</button>
+    </span>
+  </div>
   <div class="cap-sonido"><button class="btn sec" type="button" id="capSonido">🔊 Probar sonido</button><p id="capSonidoTxt" aria-live="polite"></p></div>
   <div class="i-botones">
     <button class="btn" type="button" id="capContinuar" hidden></button>
@@ -102,7 +109,33 @@
     <button class="btn sec" type="button" id="capHistoria">Ver la historia</button>
     <button class="btn sec" type="button" id="capEditar">Cambiar personaje</button>
   </div>
+  <p class="cap-pie"><a class="cap-privacidad" id="capPrivacidad" href="privacidad.html" target="_blank" rel="noopener">Privacidad</a></p>
 </div></div>`);
+
+  // ---------- duración del día (la guarda el motor en progreso.ajustes.dia)
+  function marcarDuracion() {
+    const d = motor.duracion ? motor.duracion() : ((progreso.cargar().ajustes || {}).dia || 'normal');
+    document.querySelectorAll('#capitulo .cap-dur-b').forEach((b) => {
+      const on = b.dataset.dia === d;
+      b.classList.toggle('activo', on); b.classList.toggle('sec', !on);
+      b.setAttribute('aria-pressed', String(on));
+    });
+  }
+  document.querySelectorAll('#capitulo .cap-dur-b').forEach((b) => b.addEventListener('click', () => {
+    const d = b.dataset.dia;
+    if (motor.setDuracion) motor.setDuracion(d);
+    else { const pr = progreso.cargar(); progreso.guardar({ ajustes: Object.assign({}, pr.ajustes || {}, { dia: d }) }); }
+    marcarDuracion();
+  }));
+
+  // ---------- premios de la cachorrita (H.premios, en progreso.js)
+  const P_ICO = { collar: '📿', casita: '🏠', truco: '🐾', ropa: '🎀', decoracion: '🎉' };
+  const listaPremios = (lst) => lst.map((x) => `<li class="premio premio-${x.tipo}"><span aria-hidden="true">${P_ICO[x.tipo] || '⭐'}</span> ${x.nombre}</li>`).join('');
+  function textoSiguiente(m, extra) {
+    const sg = H.premios && H.premios.siguiente(extra);
+    if (!sg) return `¡${m} ya tiene todos los premios!`;
+    return `Próximo premio para ${m}: <b>${sg.nombre}</b> (te ${sg.faltan === 1 ? 'falta 1 estrella' : `faltan ${sg.faltan} estrellas`}).`;
+  }
 
   const ESTRELLA = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z"/></svg>';
 
@@ -119,7 +152,13 @@
       motor.sfx('logro');
     }
     $('#capTitulo').textContent = `Una semana con ${m}`;
-    $('#capTrato').textContent = `El trato con papá: si durante ${DIAS} días cuidas a ${m} y tus cosas, ${m} se queda. Cada día bien hecho llena una página del diario de la abuela.`;
+    $('#capTrato').textContent = `${m} ya es parte de tu familia. Cada día bien hecho llena una página del diario de la abuela, y tus estrellas desbloquean premios para ${m}: collares, trucos y más.`;
+    // la cachorrita como espejo: si no jugabas hace días, te extrañó (siempre feliz de verte)
+    let espejo = $('#capEspejo');
+    if (!espejo) { espejo = document.createElement('p'); espejo.id = 'capEspejo'; espejo.className = 'cap-espejo'; $('#capTrato').after(espejo); }
+    const ds = H.perro ? H.perro.diasSinJugar : 0;
+    espejo.hidden = !(pr.prologo && (ds >= 2 || H.premios));
+    espejo.innerHTML = (pr.prologo && ds >= 2 ? `<b>¡${m} te extrañó!</b> Qué bueno que volviste. ` : '') + (H.premios ? textoSiguiente(m) : '');
     $('#capDiario').innerHTML = Array.from({ length: DIAS }, (_, i) => {
       const dia = i + 1, hecho = pr.diario.find((d) => d.dia === dia);
       const est = hecho ? hecho.estrellas : 0;
@@ -139,6 +178,8 @@
     mundo.push(p.estacion === 'invierno' ? 'Invierno: amanece oscuro y hace frío' : 'Verano: amanece con sol');
     if (p.clima === 'lluvia') mundo.push('Está lloviendo');
     $('#capMundo').innerHTML = mundo.map((t) => `<span>${t}</span>`).join('');
+    $('#capAjustes').hidden = false;
+    marcarDuracion();
     $('#capEmpezar').textContent = pr.prologo ? `Empezar el día ${pr.dia}` : 'Empezar la historia';
     // ¿hay una partida guardada de hoy? se puede seguir donde quedaste
     const g = pr.prologo && motor.partidaDeHoy ? motor.partidaDeHoy() : null;
@@ -155,23 +196,30 @@
     ($('#capContinuar').hidden ? $('#capEmpezar') : $('#capContinuar')).focus();
   }
 
-  // ---------- fin de la semana: papá decide si el cachorro se queda
+  // ---------- fin de la semana: la cachorrita SIEMPRE se queda; las estrellas desbloquean premios
   function finDeSemana(p, pr) {
-    const m = p.mascota.nombre, total = progreso.totalEstrellas(pr), gano = total >= progreso.PARA_GANAR;
-    $('#capTitulo').textContent = gano ? `¡${m} se queda!` : 'La semana terminó';
-    $('#capTrato').textContent = gano
-      ? `Juntaste ${total} de ${DIAS * 3} estrellas. Papá: "Cumpliste el trato. ${m} es oficialmente parte de la familia." El capítulo 2 (9 años) se desbloquea pronto.`
-      : `Juntaste ${total} de ${DIAS * 3} estrellas y necesitabas ${progreso.PARA_GANAR}. Papá: "Te doy otra semana para demostrarlo. ${m} cuenta contigo."`;
-    $('#capHoy').textContent = 'Tu semana';
-    $('#capMetas').innerHTML = '';
-    $('#capEmpezar').textContent = gano ? 'Jugar la semana otra vez' : 'Intentar otra semana';
+    const m = p.mascota.nombre, total = progreso.totalEstrellas(pr);
+    // por si faltó revisar (p. ej. una partida vieja): da los premios que ya alcanzan las estrellas
+    if (H.premios) H.premios.revisar();
+    const nuevos = H.premios ? H.premios.deLaSemana() : [];
+    $('#capTitulo').textContent = `¡${m} se queda contigo!`;
+    $('#capTrato').textContent = total >= DIAS * 2
+      ? `Juntaste ${total} ${total === 1 ? 'estrella' : 'estrellas'} esta semana. Papá: "¡Qué semana! ${m} es parte de la familia para siempre. Estoy muy orgulloso de ti, ${p.genero === 'nina' ? 'hija' : 'hijo'}."`
+      : `Juntaste ${total} ${total === 1 ? 'estrella' : 'estrellas'} esta semana. Papá: "${m} es parte de la familia para siempre. Cada semana que la cuidas, ella aprende y gana cosas nuevas."`;
+    const espejo = $('#capEspejo'); if (espejo) espejo.hidden = true;
+    $('#capHoy').textContent = nuevos.length ? `Premios para ${m}` : 'Tu semana';
+    $('#capMetas').innerHTML = (nuevos.length ? listaPremios(nuevos) : `<li>Esta semana no hubo premios nuevos, pero ${m} te quiere igual. ¡La próxima semana vas por más!</li>`)
+      + `<li class="nota-estrellas">${H.premios ? textoSiguiente(m) : ''}</li>`;
+    const sp = $('#capSorpresa'); if (sp) sp.hidden = true;
+    $('#capEmpezar').textContent = 'Jugar otra semana con ' + m;
     $('#capMundo').innerHTML = '';
     $('#capHistoria').hidden = true;
+    $('#capAjustes').hidden = false; marcarDuracion();
     const ctl = $('#capitulo .controles'); if (ctl) ctl.hidden = true;
     // antes faltaba mostrar la tarjeta: el juego quedaba en negro después del domingo
     $('#capitulo').hidden = false;
     $('#capEmpezar').focus();
-    if (gano) motor.sfx('logro');
+    motor.sfx('logro');
   }
 
   // ---------- fin del día: estrellas al diario y siguiente día
@@ -183,14 +231,18 @@
     let caja = $('#rDiario');
     if (!caja) { caja = document.createElement('section'); caja.id = 'rDiario'; caja.className = 'r-diario'; hoja.insertBefore(caja, $('#rStats')); }
     const sig = dia + 1;
+    if (H.perro && H.perro.cerrarDia) H.perro.cerrarDia();   // cómo la cuidaste hoy → su ánimo de mañana
+    const acum = progreso.estrellasAcumuladas(pr) + estrellas;
+    const ganaria = H.premios ? H.premios.lista().filter((x) => !x.tiene && x.estrellas != null && x.estrellas <= acum) : [];
     caja.innerHTML = `<h2>Diario · Día ${dia} de ${DIAS}</h2>
       <div class="r-estrellas" role="img" aria-label="${estrellas} de 3 estrellas">${[0, 1, 2].map((k) => `<span class="${k < estrellas ? 'llena' : ''}">${ESTRELLA_G}</span>`).join('')}</div>
       <ul class="r-metas">${metas.map(([id, t]) => `<li class="${logradas.includes(id) ? 'si' : ''}">${t}</li>`).join('')}</ul>
-      ${sig <= DIAS ? `<p class="r-manana"><b>Mañana, ${progreso.semana(sig, p.mascota.nombre).nombre.toLowerCase()}:</b> ${progreso.semana(sig, p.mascota.nombre).sorpresa}</p>` : `<p class="r-manana"><b>Mañana:</b> papá decide si ${p.mascota.nombre} se queda.</p>`}
-      <p class="r-semana">Llevas ${progreso.totalEstrellas(pr) + estrellas} ${progreso.totalEstrellas(pr) + estrellas === 1 ? 'estrella' : 'estrellas'} en la semana. Para que ${p.mascota.nombre} se quede necesitas ${progreso.PARA_GANAR} de ${DIAS * 3}.</p>
+      ${sig <= DIAS ? `<p class="r-manana"><b>Mañana, ${progreso.semana(sig, p.mascota.nombre).nombre.toLowerCase()}:</b> ${progreso.semana(sig, p.mascota.nombre).sorpresa}</p>` : `<p class="r-manana"><b>Mañana:</b> ¡fiesta de fin de semana! Tus estrellas desbloquean premios para ${p.mascota.nombre}.</p>`}
+      <p class="r-semana">Llevas ${progreso.totalEstrellas(pr) + estrellas} ${progreso.totalEstrellas(pr) + estrellas === 1 ? 'estrella' : 'estrellas'} en la semana. Las estrellas desbloquean premios para ${p.mascota.nombre}.</p>
+      ${ganaria.length ? `<p class="r-premio" id="rPremio">¡Premio nuevo para ${p.mascota.nombre}: <b>${ganaria.map((x) => x.nombre).join(', ')}</b>!</p>` : H.premios ? `<p class="r-premio sig">${textoSiguiente(p.mascota.nombre, estrellas)}</p>` : ''}
       <div class="i-botones"><button class="btn" type="button" id="rSeguir">${sig > DIAS ? 'Ver cómo terminó la semana' : `Guardar en el diario y seguir al día ${sig}`}</button><button class="btn sec" type="button" id="rRepetir">Repetir el día ${dia}</button></div>`;
     $('#bOtra').hidden = true;
-    $('#rSeguir').addEventListener('click', () => { progreso.terminarDia(dia, estrellas, logradas); window.location.reload(); });
+    $('#rSeguir').addEventListener('click', () => { progreso.terminarDia(dia, estrellas, logradas); if (H.premios) H.premios.revisar(); window.location.reload(); });
     $('#rRepetir').addEventListener('click', () => window.location.reload());
     $('#rSeguir').focus({ preventScroll: true });
   };

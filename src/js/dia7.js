@@ -82,7 +82,6 @@
     const pr = H.progreso.cargar();
     const dias = (pr.diario || []).filter((d) => d.dia >= 1 && d.dia <= 6);
     const total = H.progreso.totalEstrellas(pr);
-    const meta = H.progreso.PARA_GANAR;
     const lineas = [];
     if (!dias.length) {
       lineas.push('Mmm… tu diario está casi en blanco. No pasa nada, mi amor: siempre se puede empezar.');
@@ -98,10 +97,10 @@
           : 'Fue una semana difícil, ¿no? A mí también me pasa. Lo importante es no rendirse.');
       }
     }
-    const faltan = meta - total;
-    if (faltan <= 0) lineas.push(`¡Ya tienes las ${meta} estrellas del trato! ${perrita()} está en buenas manos.`);
-    else if (faltan <= 3) lineas.push(`Te ${faltan === 1 ? 'falta una estrella' : `faltan ${faltan} estrellas`}. Si hoy cumples tus metas, ¡lo logras!`);
-    else lineas.push(`Te faltan ${faltan} estrellas para el trato. Aunque no alcance, papá ve todo lo que haces por ${perrita()}.`);
+    // la cachorrita siempre se queda: las estrellas desbloquean premios para ella (H.premios)
+    const sig = H.premios && H.premios.siguiente ? H.premios.siguiente() : null;
+    if (sig && sig.faltan <= 3) lineas.push(`Si hoy cumples tus metas, ¡${perrita()} gana un premio: ${sig.nombre.toLowerCase()}!`);
+    else lineas.push(`Cada estrella cuenta: tus estrellas desbloquean premios para ${perrita()}.`);
     lineas.push(...recuerdos(pr));
     if (F().perroComio) lineas.push(`Y hoy ${perrita()} ya comió: se le ve feliz contigo.`);
     return lineas;
@@ -199,6 +198,8 @@
   function regalo(cual) {
     F().d7_regalo = cual;
     H.progreso.guardar({ regaloAbuela: cual });
+    if (cual === 'collar' && H.premios) H.premios.dar('collar-rojo', 'abuela');
+    if (cual === 'collar' && H.perro && H.perro.ponerCollar) H.perro.ponerCollar('#de5546');
     if (cual === 'collar' && H.perro && H.perro.D) { H.perro.D.anim = 'feliz'; H.perro.D.salto = 0.55; A.sfx('ladrido'); }
     A.banner('bien', 'Regalo de la abuela', cual === 'collar' ? `Un collar nuevo para ${perrita()}` : 'Un libro de cuentos');
     A.anotar(cual === 'collar' ? `La abuela le regaló un collar nuevo a ${perrita()}.` : 'La abuela te regaló un libro de cuentos.', 'bien');
@@ -206,7 +207,7 @@
     if (R.npc) { A.ponerProp(R.npc.P, null); R.npc.P.anim = 'quieto'; }
     hablar([
       cual === 'collar' ? `Le va a quedar precioso a ${perrita()}.` : 'Los cuentos más lindos se leen antes de dormir.',
-      `Mañana papá decide si ${perrita()} se queda. Pase lo que pase, yo estoy muy orgullosa de ti.`,
+      `Mañana vemos qué premios ganó ${perrita()} con tus estrellas. Yo estoy muy orgullosa de ti.`,
       'Esta noche duerme a buena hora, ¿ya?',
     ]);
   }

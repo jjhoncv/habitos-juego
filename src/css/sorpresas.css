@@ -1,0 +1,54 @@
+/* Sorpresas: tarjetita simpática al centro (lejos de la palanca y los botones táctiles de abajo
+   y del HUD de arriba). Se toca para cerrarla; se va sola a los ~9 s. */
+.sorpresa {
+  position: fixed;
+  left: 50%;
+  top: calc(38% + env(safe-area-inset-top, 0px));
+  transform: translateX(-50%);
+  z-index: 7;
+  width: min(380px, calc(100vw - 32px));
+  display: grid;
+  grid-template-columns: 54px 1fr 26px;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 10px 12px 12px;
+  background: #fff7ec;
+  color: #1d2340;
+  border: 3px solid #1d2340;
+  border-radius: 18px;
+  box-shadow: 4px 4px 0 rgba(0,0,0,.28);
+  font-family: 'Nunito', system-ui, sans-serif;
+  cursor: pointer;
+  animation: spEntra .6s cubic-bezier(.3,1.6,.5,1);
+}
+.sorpresa.sale { animation: spSale .45s ease-in forwards; }
+.sp-ico {
+  display: grid; place-items: center;
+  width: 54px; height: 54px; border-radius: 50%;
+  background: #ffe6a6; font-size: 32px; line-height: 1;
+  animation: spBaila 1.6s ease-in-out infinite;
+}
+.s-perrita .sp-ico { background: #fde0d4; }
+.s-mama .sp-ico, .s-papa .sp-ico { background: #dff3e9; }
+.s-abuela .sp-ico { background: #e7defa; animation: spRing .5s ease-in-out 4, spBaila 1.6s ease-in-out 2s infinite; }
+.sp-txt { display: grid; gap: 3px; min-width: 0; }
+.sp-txt small { font-family: 'Baloo 2', 'Trebuchet MS', system-ui, sans-serif; font-size: 15px; font-weight: 800; color: #de5546; line-height: 1.1; }
+.sp-txt b { font-size: 14.5px; font-weight: 700; line-height: 1.3; }
+.sp-premio { margin-top: 3px; padding: 3px 8px; border-radius: 99px; background: #fff4cc; font-size: 13px; font-weight: 800; justify-self: start; }
+.sp-cerrar {
+  align-self: start; width: 26px; height: 26px; border-radius: 50%;
+  border: 2px solid #1d2340; background: #fff; color: #1d2340;
+  font-size: 13px; font-weight: 900; line-height: 1; padding: 0; cursor: pointer;
+}
+/* en tablet el texto crece con --k (escala táctil del motor) */
+.toque .sorpresa { width: min(calc(380px * var(--k, 1)), calc(100vw - 32px)); }
+.toque .sp-txt b { font-size: calc(14.5px * var(--k, 1)); }
+.toque .sp-txt small { font-size: calc(15px * var(--k, 1)); }
+/* iPad parado: reloj, barras y lista ocupan hasta ~50% del alto (aviso de PANTALLA) */
+@media (orientation: portrait) and (min-width: 700px) { .sorpresa { top: calc(54% + env(safe-area-inset-top, 0px)); } }
+@media (max-height: 520px) { .sorpresa { top: calc(22% + env(safe-area-inset-top, 0px)); } }
+@keyframes spEntra { from { opacity: 0; transform: translate(-50%, 24px) scale(.7); } }
+@keyframes spSale { to { opacity: 0; transform: translate(-50%, -16px) scale(.9); } }
+@keyframes spBaila { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg) scale(1.06); } }
+@keyframes spRing { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-14deg); } 75% { transform: rotate(14deg); } }
+@media (prefers-reduced-motion: reduce) { .sorpresa, .sp-ico { animation: none; } }
