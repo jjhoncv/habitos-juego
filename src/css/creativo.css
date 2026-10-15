@@ -1,0 +1,93 @@
+/* Juego creativo (creativo.js): decorar el cuarto, vestir a la cachorrita y fotos para el álbum */
+
+/* ---------- panel: una hoja abajo, sin oscurecer la pantalla (el cuarto se ve cambiar arriba) */
+.deco { position: fixed; inset: auto 0 0 0; z-index: 45; display: flex; justify-content: center; padding: 0 12px calc(12px + env(safe-area-inset-bottom, 0px)); pointer-events: none; }
+.deco-hoja {
+  pointer-events: auto; width: min(900px, 100%); max-height: 54vh; display: flex; flex-direction: column;
+  background: var(--papel); color: var(--tinta); border: 2px solid var(--tinta); border-radius: 18px;
+  box-shadow: 6px 6px 0 var(--tinta); padding: 14px 16px 16px;
+}
+.deco-cab { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.deco-cab h2 { margin: 0; font: 800 26px/1.1 var(--f-display); }
+.deco-botones { display: flex; gap: 8px; }
+.deco-botones .btn { font-size: 17px; padding: 8px 16px; }
+.deco-tabs { display: flex; gap: 6px; margin: 10px 0 4px; overflow-x: auto; padding-bottom: 4px; }
+.deco-tabs[hidden] { display: none; }
+.deco-tabs button {
+  flex: 0 0 auto; display: flex; align-items: center; gap: 6px; cursor: pointer;
+  font: 800 16px var(--f-texto); background: #fff; color: var(--tinta);
+  border: 2px solid var(--tinta); border-radius: 999px; padding: 6px 14px; min-height: 44px;
+}
+.deco-tabs button span { font-size: 20px; }
+.deco-tabs button[aria-selected="true"] { background: var(--tinta); color: var(--papel); }
+.deco-msg { min-height: 22px; margin: 2px 0 4px; font: 800 16px var(--f-texto); color: var(--coral); }
+.deco-msg.salta { animation: decoSalta .35s ease; }
+@keyframes decoSalta { 30% { transform: translateX(-6px); } 60% { transform: translateX(6px); } }
+.deco-grid { overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; padding: 2px 2px 4px; }
+.deco-sub { grid-column: 1 / -1; margin: 4px 0 0; font: 800 18px var(--f-display); }
+.deco-op {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; position: relative;
+  background: #fff; color: var(--tinta); border: 3px solid #d7dce8; border-radius: 14px; padding: 8px 6px;
+  font: 800 15px var(--f-texto); min-height: 120px;
+}
+.deco-op:hover { border-color: var(--tinta-2); }
+.deco-op.sel { border-color: var(--menta); box-shadow: 0 0 0 3px #bfe9d6; }
+.deco-op.sel::after { content: '✓'; position: absolute; top: 4px; right: 6px; width: 24px; height: 24px; border-radius: 50%; background: var(--menta); color: #fff; font-size: 15px; line-height: 24px; }
+.deco-op.bloq { background: var(--papel-2); cursor: default; }
+.deco-op.bloq .deco-vista > *:not(.deco-candado) { filter: grayscale(.85) opacity(.55); }
+.deco-vista { position: relative; width: 96px; height: 72px; display: grid; place-items: center; border-radius: 10px; overflow: hidden; background: var(--papel-2); }
+.deco-vista img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.deco-color { width: 100%; height: 100%; display: block; }
+.deco-candado { position: absolute; inset: 0; display: grid; place-items: center; font-size: 30px; }
+.deco-nom { text-align: center; line-height: 1.15; }
+.deco-falta { font-size: 15px; color: var(--tinta-2); }
+.deco-collar { width: 58px; height: 34px; border-radius: 50%; border: 9px solid var(--c, #ccc); display: grid; place-items: center; color: #ffe066; font-size: 14px; }
+.deco-collar.nada { border-style: dashed; border-color: #b7c3d6; }
+.deco-ropa { font-size: 40px; color: var(--tinta-2); }
+html.deco-on .tactil, html.deco-on .prompt { visibility: hidden; }
+
+/* ---------- botón Foto (posiciones acordadas con PANTALLA) */
+.b-foto {
+  position: fixed; z-index: 5; left: 16px; bottom: calc(220px + env(safe-area-inset-bottom, 0px));
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+  font: 800 15px var(--f-display); color: var(--tinta); background: #fff;
+  border: 2px solid var(--tinta); border-radius: 999px; padding: 6px 14px; box-shadow: var(--sombra);
+}
+.b-foto[hidden] { display: none; }
+.b-foto span:first-child { font-size: 18px; }
+@media (max-width: 760px) { .b-foto { bottom: calc(280px + env(safe-area-inset-bottom, 0px)); } }
+.toque .b-foto { zoom: var(--k, 1); left: auto; right: calc(368px + env(safe-area-inset-right, 0px)); bottom: calc(38px + env(safe-area-inset-bottom, 0px)); padding: 9px 14px; z-index: 6; max-width: 96px; }
+@media (orientation: portrait) and (min-width: 601px), (max-width: 600px) {
+  .toque .b-foto { left: calc(26px + env(safe-area-inset-left, 0px)); right: auto; bottom: calc(290px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-height: 500px) {
+  .toque .b-foto { left: auto; right: calc(340px + env(safe-area-inset-right, 0px)); bottom: calc(28px + env(safe-area-inset-bottom, 0px)); padding: 6px 12px; }
+}
+.toque .en-partido .b-foto, .en-partido .b-foto, html.pisc-on #bFoto, html.deco-on #bFoto { display: none; }
+
+/* ---------- flash suave y la fotito que se guarda */
+.foto-flash { position: fixed; inset: 0; z-index: 60; background: #fff; pointer-events: none; opacity: 0; }
+.foto-flash.on { animation: fotoFlash .6s ease-out; }
+@keyframes fotoFlash { 0% { opacity: .85; } 100% { opacity: 0; } }
+.foto-mini {
+  position: fixed; z-index: 47; left: 50%; top: 14%; transform: translateX(-50%) rotate(-2deg);
+  display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none;
+  background: #fff; border: 2px solid var(--tinta); border-radius: 10px; padding: 8px 8px 10px; box-shadow: var(--sombra);
+  font: 800 16px var(--f-texto); color: var(--tinta); max-width: min(300px, calc(100% - 32px)); text-align: center;
+  animation: fotoMini .35s ease-out;
+}
+.foto-mini[hidden] { display: none; }
+.foto-mini img { width: 220px; max-width: 100%; border-radius: 4px; display: block; }
+@keyframes fotoMini { from { transform: translateX(-50%) rotate(-2deg) scale(.6); opacity: 0; } }
+
+/* ---------- pestaña Fotos del álbum */
+.al-foto { margin: 0; display: flex; flex-direction: column; gap: 6px; padding: 8px 8px 10px; background: #fff; border: 2px solid var(--tinta); border-radius: 12px; }
+.al-foto img { width: 100%; border-radius: 6px; display: block; }
+.al-foto figcaption { display: flex; flex-direction: column; font-size: 15px; color: var(--tinta-2); }
+.al-foto figcaption b { font: 800 16px var(--f-display); color: var(--tinta); }
+.al-foto-quitar { align-self: flex-start; font: 800 14px var(--f-texto); background: transparent; color: var(--tinta-2); border: 2px dashed #b7c3d6; border-radius: 999px; padding: 3px 12px; cursor: pointer; }
+
+/* ---------- tablet: crece con la pantalla (con zoom, nada de vh adentro sin dividir) */
+@media (any-pointer: coarse) and (min-width: 700px) and (min-height: 600px) {
+  .deco-hoja { zoom: var(--h); max-height: calc(54vh / var(--h)); }
+}

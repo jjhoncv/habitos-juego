@@ -103,7 +103,7 @@
 }
 @media (prefers-reduced-motion: reduce) { .cr-color { transition: none; } }
 
-/* ---------- tablet (iPad): panel más grande y botones fáciles de tocar (≥ 48 px reales).
+/* ---------- tablet (iPad): panel más grande y botones fáciles de tocar (≥ 60 px reales).
    Va con (any-pointer: coarse) porque el creador sale antes del primer toque. El panel lleva zoom: --h
    (juego.js, lado corto / 600): las medidas de aquí son "sin zoom"; con zoom, nunca vw/vh adentro. */
 @media (any-pointer: coarse) and (min-width: 700px) and (min-height: 600px) {
@@ -119,9 +119,9 @@
   .cr-nombre input { padding: 8px 12px; }
   .cr-dado { width: 52px; }
   .cr-colores { gap: 12px; }
-  .cr-color { width: 46px; height: 46px; }
+  .cr-color { width: 48px; height: 48px; }
   .cr-ops { gap: 8px; }
-  .cr-op { font-size: 17px; padding: 10px 16px; min-height: 44px; }
+  .cr-op { font-size: 17px; padding: 10px 16px; min-height: 46px; }
   .cr-tarjeta { font-size: 14px; }
   .cr-tarjeta b { font-size: 19px; }
 }

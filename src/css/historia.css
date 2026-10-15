@@ -191,5 +191,14 @@
   .cine-saltar { top: calc(5% + 10px); }
   .ojos .cine-saltar { top: 16px; }
   .ojos-reloj { zoom: var(--h); }
-  .guia { top: calc(128px + env(safe-area-inset-top, 0px)); }
+  /* la guía del tutorial va en el medio de abajo, justo sobre los controles: no tapa el reloj, la lista, las barras
+     ni los botones que nombra (acostada: sobre la fila del álbum y el cartelito Usar; parada: sobre el álbum) */
+  .guia { top: auto; bottom: calc(150px * var(--k, 1) / var(--h) + env(safe-area-inset-bottom, 0px)); width: min(480px, calc(100% - 32px)); }
+  .g-txt p { font-size: 17px; }
+  .g-txt small { font-size: 12px; }
+  .guia .btn { font-size: 17px; min-height: 46px; }
+  .cine-quien { font-size: 17px; }
+}
+@media (any-pointer: coarse) and (min-width: 700px) and (min-height: 600px) and (orientation: portrait) {
+  .guia { bottom: calc(346px * var(--k, 1) / var(--h) + env(safe-area-inset-bottom, 0px)); }   /* sobre el álbum y la Foto */
 }

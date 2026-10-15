@@ -208,6 +208,8 @@
       papa: { p: 0.8, r: 1.0, h: true }, vendedor: { p: 0.95, r: 1.12, h: true }, nino: { p: 1.6, r: 1.15 }, nina: { p: 1.85, r: 1.12, m: true },
       // la cachorrita cuando te explica: vocecita aguda, tierna y un poquito más lenta
       perrita: { p: 2.0, r: 0.98, m: true }, perro: { p: 2.0, r: 0.98, m: true },
+      // el narrador que lee en voz alta (voz.js): cálido y despacito, para quien lee lento
+      narrador: { p: 1.1, r: 0.9, m: true },
     };
     if (window.speechSynthesis) try { speechSynthesis.onvoiceschanged = elegirVoz; } catch (e) { /* nada */ }
     function tono(f, t0, dur, tipo, vol, dest, fFin) {
@@ -2649,6 +2651,7 @@
       if (!inicial) contar(num, antes, v, (x) => Math.round(x));
       row.querySelector('.s-estado').textContent = estadoDe(id, v);
       row.classList.toggle('bajo', v < 30);
+      row.classList.toggle('urge', v < 25);   // en tablet, con las barras compactas, su ícono late
     }
     if (!inicial && v !== antes) { row.classList.remove('sube', 'baja'); void row.offsetWidth; row.classList.add(v > antes ? 'sube' : 'baja'); }
   }
@@ -2719,8 +2722,8 @@
         : `Todo suma <b>${falta} min</b>, pero solo tienes <b>${quedan} min</b>. Te faltan ${falta - quedan}: elige qué dejar.`;
   }
   function mostrarLista() {
-    // en el celular empieza plegada (se abre tocándola)
-    if (tactil && window.matchMedia('(max-height: 500px), (max-width: 600px)').matches) $('#lista').classList.add('plegada');
+    // en el celular y en la tablet empieza plegada (se abre tocándola)
+    if (tactil && empiezaPlegada()) $('#lista').classList.add('plegada');
     $('#lista').hidden = false; pintarLista();
   }
   function pendientes() { return TAREAS.filter(([, ok]) => !ok()).map(([t]) => t.toLowerCase()); }
@@ -2827,6 +2830,7 @@
       b.addEventListener('blur', quitar);
       cont.appendChild(b);
     });
+    evento('panel', { def, opciones: ops, cont });   // voz.js: íconos, 🔊 y lectura en voz alta
     Sonido.sfx('abrir');
     $('#panel').hidden = false;
     $('#prompt').hidden = true;
@@ -4262,19 +4266,26 @@
   const raiz = document.documentElement;
   let tactil = false;
   // en pantallas grandes (iPad de 11" o 12,9") los controles crecen con la pantalla: --k va de 1 a 1.8
+  // tablet (iPad): las cajas del HUD empiezan plegadas para que se vea la escena (PANTALLA, tactil.css)
+  const TABLET = '(min-width: 700px) and (min-height: 600px)';
+  const esTablet = () => !!(window.matchMedia && window.matchMedia(TABLET).matches);
+  const empiezaPlegada = () => esTablet() || window.matchMedia('(max-height: 500px), (max-width: 600px)').matches;
+  // las barras de estado: en tablet, una columna de íconos con el número; al tocarla se abre completa
+  function barrasCompactas() { $('#hStats').classList.toggle('compacta', tactil && esTablet()); }
   function escalaTactil() {
     // según el lado corto: igual de grandes con el iPad parado o acostado (iPhone 1, iPad 11" ≈1.4, iPad 12,9" ≈1.7)
     const k = Math.max(1, Math.min(1.8, Math.min(window.innerWidth, window.innerHeight) / 600));
     raiz.style.setProperty('--k', k.toFixed(3));
     raiz.style.setProperty('--h', Math.min(k, 1.4).toFixed(3));   // zoom del HUD y paneles (PANTALLA): número plano, más seguro en Safari
   }
-  window.addEventListener('resize', escalaTactil);
+  window.addEventListener('resize', () => { escalaTactil(); barrasCompactas(); });
   escalaTactil();
   function modoTactil(on) {
     if (on === tactil) return;
     tactil = on;
     raiz.classList.toggle('toque', on);
-    if (on && window.matchMedia('(max-height: 500px), (max-width: 600px)').matches) $('#lista').classList.add('plegada');
+    if (on && empiezaPlegada()) $('#lista').classList.add('plegada');
+    barrasCompactas();
     if (!on) soltarPalanca();
   }
   window.addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch') modoTactil(true); }, true);
@@ -4308,8 +4319,32 @@
   if ((window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || navigator.maxTouchPoints > 0) modoTactil(true);
   // el cartelito "Usar · Cama" también se puede tocar
   $('#prompt').addEventListener('click', () => { if (!accion && !panelAbierto) interactuar(); });
-  // en el celular la lista de cosas por hacer se pliega: tócala para verla
-  $('#lTit').addEventListener('click', () => { if (tactil) $('#lista').classList.toggle('plegada'); });
+  // en el celular y la tablet la lista de cosas por hacer se pliega: tócala para verla; se pliega sola a los 8 s
+  // (y las barras compactas de la tablet: tócalas para verlas completas; se pliegan solas a los 6 s)
+  const plegarT = {};
+  function plegarLuego(el, clase, seg) {
+    clearTimeout(plegarT[el.id]);
+    plegarT[el.id] = setTimeout(function plegar() {
+      if (el.classList.contains('foco')) { plegarT[el.id] = setTimeout(plegar, 2000); return; }   // el tutorial la está mostrando
+      el.classList.add(clase);
+    }, seg * 1000);
+  }
+  $('#lTit').addEventListener('click', () => {
+    if (!tactil) return;
+    const l = $('#lista');
+    l.classList.toggle('plegada');
+    if (!l.classList.contains('plegada')) { plegarLuego(l, 'plegada', 8); if (esTablet()) $('#hStats').classList.add('compacta'); }   // en tablet, una caja abierta a la vez
+    else clearTimeout(plegarT.lista);
+  });
+  // mientras la desliza con el dedo, la lista no se pliega
+  $('#lista').addEventListener('scroll', () => { if (tactil && !$('#lista').classList.contains('plegada')) plegarLuego($('#lista'), 'plegada', 8); }, { passive: true });
+  $('#hStats').addEventListener('click', () => {
+    if (!tactil || !esTablet()) return;
+    const st = $('#hStats');
+    st.classList.toggle('compacta');
+    if (!st.classList.contains('compacta')) { plegarLuego(st, 'compacta', 6); $('#lista').classList.add('plegada'); }
+    else clearTimeout(plegarT.hStats);
+  });
   $('#bAccion').addEventListener('click', () => { if (!accion) interactuar(); });
   $('#bAccion').addEventListener('pointerdown', () => { if (accion) K.rapido = true; });
   ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => $('#bAccion').addEventListener(ev, () => { K.rapido = false; }));

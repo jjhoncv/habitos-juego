@@ -1,0 +1,53 @@
+/* voz.css — íconos grandes en las opciones, botoncito 🔊, flecha que señala y ajuste "leer en voz alta" (voz.js).
+   Tamaños en px normales: en tablet el panel lleva zoom --h y crecen solos. */
+
+/* ---------- opciones con ícono grande a la izquierda y 🔊 a la derecha */
+.op.con-ico, .op.con-voz { position: relative; }
+.op.con-ico { padding-left: 62px; min-height: 58px; }
+.op.con-voz { padding-right: 52px; }
+.op-ico {
+  position: absolute; left: 8px; top: 50%; transform: translateY(-50%);
+  width: 46px; height: 46px; display: grid; place-items: center;
+  font-size: 32px; line-height: 1; border-radius: 12px; background: var(--papel-2, #f4e7d4);
+  pointer-events: none;
+}
+.op-ico svg { width: 34px; height: 34px; }
+.op.cerrar .op-ico { background: transparent; font-size: 26px; }
+.op-voz {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  width: 40px; height: 40px; display: grid; place-items: center;
+  font-size: 20px; line-height: 1; border-radius: 50%;
+  background: #e2f3fb; border: 2px solid var(--cielo, #3d9bd4); cursor: pointer;
+  touch-action: manipulation;
+}
+.op-voz:hover { background: #cbe9f8; }
+.op-voz.suena { animation: voz-pulso .6s ease-out; }
+@keyframes voz-pulso { 0% { box-shadow: 0 0 0 0 rgba(61, 155, 212, .6); } 100% { box-shadow: 0 0 0 12px rgba(61, 155, 212, 0); } }
+
+/* ---------- flecha que señala un objeto de la escena (no se puede tocar: no estorba) */
+.voz-flecha {
+  position: fixed; left: 0; top: 0; z-index: 3; width: 0; height: 0;
+  pointer-events: none; will-change: transform;
+}
+.voz-flecha.oculta { display: none; }
+.vf-punta {
+  position: absolute; left: -17px; top: -52px; width: 34px; height: 42px;
+  fill: var(--sol, #f2a623); stroke: var(--tinta, #1d2340); stroke-width: 3; stroke-linejoin: round;
+  filter: drop-shadow(0 0 6px rgba(255, 210, 63, .9));
+  animation: vf-salta .9s ease-in-out infinite;
+}
+.vf-anillo {
+  position: absolute; left: -22px; top: -8px; width: 44px; height: 16px; border-radius: 50%;
+  border: 3px solid rgba(255, 210, 63, .95); animation: vf-brilla 1.2s ease-out infinite;
+}
+.voz-flecha.borde .vf-anillo { display: none; }
+.voz-flecha.borde .vf-punta { top: -21px; animation: none; }
+@keyframes vf-salta { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes vf-brilla { 0% { transform: scale(.6); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .vf-punta, .vf-anillo { animation: none; } }
+
+/* ---------- tarjeta del día: ¿te leo en voz alta? */
+.voz-ajuste { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 12px; }
+.voz-ajuste-g { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.btn.voz-b { font-size: 15px; padding: 5px 14px; border-radius: 999px; box-shadow: 2px 2px 0 var(--tinta, #1d2340); }
+.btn.voz-b.activo { background: var(--menta, #2aa876); color: #fff; }

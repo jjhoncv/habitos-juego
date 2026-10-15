@@ -9,6 +9,9 @@ html:not(.toque) .tactil, html:not(.toque) .b-mapa, html:not(.toque) .solo-toque
 .toque kbd[data-t] { font-size: 0; min-width: 0; padding: 0 10px; }
 .toque kbd[data-t]::after { content: attr(data-t); font: 800 13px var(--f-display); letter-spacing: .02em; }
 .toque .op, .toque .op.cerrar { grid-template-columns: 1fr; padding: 12px 14px; }
+/* con ícono o botón de voz (voz.css) se respeta su espacio a los lados */
+.toque .op.con-ico { padding-left: 62px; }
+.toque .op.con-voz { padding-right: 52px; }
 .toque .op-t { font-size: 16px; }
 .toque .mc-botones small, .toque .m-ayuda { display: none; }
 
@@ -91,9 +94,9 @@ html:not(.toque) .tactil, html:not(.toque) .b-mapa, html:not(.toque) .solo-toque
 .toque .l-tit { cursor: pointer; }
 .toque .lista { pointer-events: auto; }
 .toque .lista .l-tit::after { content: '▴'; margin-left: 6px; font-family: var(--f-texto); }
-.toque .lista.plegada .l-tit { margin: 0; }
-.toque .lista.plegada .l-tit::after { content: '▾'; }
-.toque .lista.plegada ul, .toque .lista.plegada .l-res { display: none; }
+.toque .lista.plegada:not(.foco) .l-tit { margin: 0; }
+.toque .lista.plegada:not(.foco) .l-tit::after { content: '▾'; }
+.toque .lista.plegada:not(.foco) ul, .toque .lista.plegada:not(.foco) .l-res { display: none; }
 
 /* ---------- fútbol: los botones del partido a la derecha, en dos filas */
 .en-partido .tactil .accion-btn, .toque .en-partido .b-sonido, .toque .en-partido .b-mapa, .toque .en-partido .b-album, .toque .en-partido .lugar { display: none; }
@@ -167,7 +170,7 @@ html:not(.toque) .tactil, html:not(.toque) .b-mapa, html:not(.toque) .solo-toque
 @media (max-width: 600px) {
   .toque .crecer-hud, .toque .lugar { display: none; }
   .toque .stats { right: 10px; width: 158px; }
-  .toque .lista { left: 10px; width: 196px; max-height: calc(100% - 330px); overflow-y: auto; }
+  .toque .lista { left: 10px; width: 168px; max-height: calc(100% - 330px); overflow-y: auto; }
   .toque .l-tit { font-size: 13px; }
   /* sonido, mapa y álbum suben en columna sobre el botón Usar */
   .toque .b-sonido, .b-mapa { right: calc(38px + env(safe-area-inset-right, 0px)); }
@@ -208,64 +211,94 @@ html.toque:has(#lista:not(.plegada):not([hidden])) .crecer-hud { display: none !
 }
 
 /* ================= TABLET (iPad 11" y 12,9", parado y acostado; también el visor de claude.ai ~966×1280)
-   El texto del HUD crece con la pantalla: zoom: var(--h), con --h = min(--k, 1.4) (juego.css). Todos los iPad
-   tienen los mismos puntos por pulgada, así que con 1.4 la letra se ve igual de grande en el de 11" y en el
-   de 12,9"; el grande gana espacio. Los controles de abajo crecen con --k (más arriba).
+   Letra para niños de 6-7 años a un brazo de distancia (px reales): diálogos, avisos y paneles 22-26; lista y
+   barras 18-20; etiquetas 16-18; hora y títulos 28-36; botones 18-22 y de 60 px o más; nunca menos de 14.
+   Y que se vea la escena: las cajas empiezan PLEGADAS (juego.js pone .plegada en la lista y .compacta en las
+   barras; un toque las abre y se pliegan solas a los 8 s / 6 s; mientras el tutorial las muestra, .foco las abre).
+   Tamaños: zoom: var(--h), con --h = min(--k, 1.4) (juego.js). Todos los iPad tienen los mismos puntos por
+   pulgada: con 1.4 la letra se ve igual en el de 11" y en el de 12,9". Los controles crecen con --k (arriba).
    OJO con zoom: los px se multiplican, los % no, y en Chrome los vw/vh SÍ: dentro de algo con zoom usa % y px.
-   El reloj, la lista y las barras van en una grilla (.hud) que deja libre abajo el lugar de los controles:
-   la lista se encoge sola (y se desliza con el dedo) si no cabe. */
+   Reloj y lista van en una grilla (.hud) que deja libre abajo el lugar de los controles: la lista abierta se
+   encoge sola (y se desliza con el dedo) si no cabe. Las barras, arriba a la derecha. */
 @media (min-width: 700px) and (min-height: 600px) {
   .toque .hud {
     display: grid; grid-template-columns: auto; grid-template-rows: auto minmax(0, auto);
-    align-content: start; align-items: start; column-gap: calc(12px * var(--h)); row-gap: calc(10px * var(--h));
+    align-content: start; align-items: start; row-gap: calc(10px * var(--h));
     padding: calc(12px * var(--h) + env(safe-area-inset-top, 0px)) calc(16px * var(--h) + env(safe-area-inset-right, 0px))
              calc(234px * var(--k, 1) + env(safe-area-inset-bottom, 0px)) calc(16px * var(--h) + env(safe-area-inset-left, 0px));
   }
   .toque .tiempo, .toque .stats, .toque .lista { position: static; zoom: var(--h); }
-  /* acostada, las barras quedan fuera de la grilla, arriba a la derecha */
-  .toque .stats { position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); right: calc(16px + env(safe-area-inset-right, 0px)); }
-  .toque .tiempo { grid-area: 1 / 1; width: 400px; }
-  .toque .lista { grid-area: 2 / 1; justify-self: start; box-sizing: border-box; width: 324px; max-height: 100%; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
-  .toque .lista li { gap: 8px; }
-  /* barras en dos columnas (sin la palabra del estado: el color y el número ya lo dicen) */
-  .toque .stats { width: 356px; grid-template-columns: 1fr 1fr; column-gap: 12px; }
+
+  /* reloj compacto: la hora, y al lado el día y la pista en dos renglones; la barra del día delgada */
+  .toque .tiempo { grid-area: 1 / 1; justify-self: start; width: auto; max-width: 340px; padding: 6px 12px 8px; }
+  .toque .t-cab { flex-wrap: nowrap; align-items: center; gap: 10px; }
+  .toque .t-hora { font-size: 24px; }
+  .toque .t-txt { display: grid; font-size: 14px; line-height: 1.25; min-width: 0; }
+  .toque .t-txt b { font-size: 19px; line-height: 1.1; white-space: nowrap; }
+  .toque .t-barra { height: 7px; margin-top: 6px; }
+
+  /* lista de tareas: plegada muestra solo "Lo que tengo que hacer 2/8 ▾" (todo el título se toca) */
+  .toque .lista { grid-area: 2 / 1; justify-self: start; box-sizing: border-box; width: 340px; max-height: 100%; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: 10px 14px 12px; }
+  .toque .l-tit { font-size: 16px; gap: 10px; }
+  .toque .lista.plegada:not(.foco) { width: auto; padding: 12px 16px; }
+  .toque .lista li { gap: 8px; font-size: 14px; grid-template-columns: 20px 1fr auto; }
+  .toque .chk { width: 18px; height: 18px; }
+  .toque .l-t small { font-size: 11px; }
+  .toque .l-min { font-size: 12px; }
+  .toque .l-res { font-size: 13px; }
+
+  /* barras de estado arriba a la derecha. Abiertas: dos columnas con nombre, número y barra */
+  .toque .stats { position: absolute; z-index: 2; top: calc(12px + env(safe-area-inset-top, 0px)); right: calc(16px + env(safe-area-inset-right, 0px));
+    width: 356px; grid-template-columns: 1fr 1fr; column-gap: 12px; pointer-events: auto; cursor: pointer; }
   .toque .stats .logros-fila, .toque .stats .dinero { grid-column: 1 / -1; }
   .toque .s-estado { display: none; }
+  .toque .s-n { font-size: 14px; }
+  /* compactas (lo normal): una columna de íconos de color con el número y una barrita; si una baja de 25, late */
+  .toque .stats.compacta:not(.foco) { width: auto; grid-template-columns: auto; gap: 6px; padding: 6px 8px 6px 6px; border-radius: 22px; }
+  .toque .stats.compacta:not(.foco) .stat { grid-template-columns: 32px auto; gap: 6px; }
+  .toque .stats.compacta:not(.foco) .ico { width: 32px; height: 32px; }
+  .toque .stats.compacta:not(.foco) .ico svg { width: 18px; height: 18px; }
+  .toque .stats.compacta:not(.foco) .s-n, .toque .stats.compacta:not(.foco) .s-estado,
+  .toque .stats.compacta:not(.foco) .logros-fila, .toque .stats.compacta:not(.foco) .dinero { display: none; }
+  .toque .stats.compacta:not(.foco) .s-fila { display: block; }
+  .toque .stats.compacta:not(.foco) .s-v { display: block; margin: 0; font-size: 15px; line-height: 1; text-align: right; }
+  .toque .stats.compacta:not(.foco) .s-barra { width: 30px; height: 5px; margin-top: 3px; border-width: 1px; }
+  .toque .stats.compacta:not(.foco) .s-barra::after { display: none; }
+  .toque .stats.compacta:not(.foco) .stat.urge .ico { animation: late .9s ease-in-out infinite; }
+  @keyframes late { 0%, 100% { transform: scale(1); box-shadow: inset 0 -3px 0 rgba(0,0,0,.18); } 50% { transform: scale(1.18); box-shadow: 0 0 0 4px rgba(222,85,70,.45); } }
 
   .toque .aviso, .toque .logros-cola, .toque .panel { zoom: var(--h); }
-  .toque .aviso { top: calc(130px + env(safe-area-inset-top, 0px)); width: min(440px, calc(100% - 32px)); }
-  .toque .aviso div { font-size: 15px; }
+  .toque .aviso { top: calc(96px + env(safe-area-inset-top, 0px)); width: min(440px, calc(100% - 32px)); }
+  .toque .aviso div { font-size: 17px; }
   .toque .logros-cola { width: min(440px, calc(100% - 32px)); }
   .toque .panel { width: min(560px, calc(100% - 32px)); max-height: calc(100% - 100px); }
-  .toque .op-n { font-size: 14px; }
+  .toque .panel p { font-size: 17px; }
+  .toque .op-t { font-size: 16px; }
+  .toque .op-n { font-size: 15px; }
   .toque .chip { font-size: 13px; }
+  .toque .p-ganas { font-size: 15px !important; }
   /* etiquetas sobre los objetos y burbujas de diálogo: juego.js las ubica en px de pantalla, así que
      no llevan zoom; crecen con el tamaño de letra */
-  .toque .etq-obj { font-size: calc(12px * var(--h)); gap: calc(6px * var(--h)); padding: calc(2px * var(--h)) calc(4px * var(--h)) calc(2px * var(--h)) calc(10px * var(--h)); }
+  .toque .etq-obj { font-size: calc(12.5px * var(--h)); gap: calc(6px * var(--h)); padding: calc(2px * var(--h)) calc(4px * var(--h)) calc(2px * var(--h)) calc(10px * var(--h)); }
   .toque .etq-obj .m { font-size: calc(13px * var(--h)); padding: 1px calc(8px * var(--h)) 1px calc(5px * var(--h)); }
   .toque .etq-obj .m svg { width: calc(13px * var(--h)); height: calc(13px * var(--h)); }
   .toque .etq { font-size: calc(13px * var(--h)); padding: 1px calc(9px * var(--h)); }
-  .toque .burbuja { font-size: calc(14px * var(--h)); max-width: min(calc(260px * var(--h)), 70vw); padding: calc(7px * var(--h)) calc(11px * var(--h)); }
+  .toque .burbuja { font-size: calc(16.5px * var(--h)); max-width: min(calc(280px * var(--h)), 70vw); padding: calc(7px * var(--h)) calc(12px * var(--h)); }
   .toque .vuela b { font-size: calc(19px * var(--h)); }
   .toque .vuela .ico { width: calc(26px * var(--h)); height: calc(26px * var(--h)); }
   .toque .vuela .ico svg { width: calc(15px * var(--h)); height: calc(15px * var(--h)); }
+  /* la barra de crecer sale en la tarjeta del día; en el juego, menos cajas y más escena */
+  .toque .crecer-hud { display: none !important; }
+  /* botones para tocar: 60 px reales o más (álbum y cartelito Usar crecen con --k) */
+  .toque .b-album { min-height: 48px; }
+  .toque .prompt { min-height: 46px; box-sizing: border-box; }
   /* el mapa en grande ocupa casi toda la pantalla */
   .toque .mapa.grande { width: min(calc(100% - 32px), calc((100vh - 48px) * 1.25)); }
 }
 
-/* ---------- tablet parada: reloj a lo ancho; debajo las barras en 3 columnas y la lista a lo ancho con las
-   tareas en 2 columnas. Abajo queda libre para el álbum, Silbar y el cartelito Usar (que baja un poco). */
+/* ---------- tablet parada: abajo queda libre para el álbum, Silbar y el cartelito Usar (que baja un poco) */
 @media (min-width: 700px) and (min-height: 600px) and (orientation: portrait) {
-  .toque .hud { grid-template-columns: 1fr; grid-template-rows: auto auto minmax(0, auto); padding-bottom: calc(310px * var(--k, 1) + env(safe-area-inset-bottom, 0px)); }
-  .toque .tiempo { grid-area: 1 / 1; width: auto; }
-  .toque .stats { position: static; grid-area: 2 / 1; width: auto; grid-template-columns: 1fr 1fr 1fr; gap: 5px 14px; padding: 7px 10px; }
-  .toque .lista { grid-area: 3 / 1; width: auto; justify-self: stretch; }
-  .toque .lista ul { grid-template-columns: 1fr 1fr; column-gap: 16px; }
-  .toque .stat { grid-template-columns: 30px 1fr; gap: 7px; }
-  .toque .stat .ico { width: 30px; height: 30px; }
-  .toque .stat .ico svg { width: 17px; height: 17px; }
-  .toque .s-barra { height: 8px; margin-top: 2px; }
-  .toque .logros-fila { padding-top: 4px; }
+  .toque .hud { padding-bottom: calc(344px * var(--k, 1) + env(safe-area-inset-bottom, 0px)); }   /* sobre el álbum y la Foto */
   .toque .prompt { bottom: calc(182px + env(safe-area-inset-bottom, 0px)); }
   .toque .progreso { bottom: calc(182px + env(safe-area-inset-bottom, 0px)); width: 300px; }
 }
@@ -274,4 +307,7 @@ html.toque:has(#lista:not(.plegada):not([hidden])) .crecer-hud { display: none !
    (centrados chocaban con el álbum cuando el nombre es largo, p. ej. "Plato de Molly") */
 @media (min-width: 700px) and (min-height: 600px) and (orientation: landscape) {
   .toque .prompt, .toque .progreso { bottom: calc(100px + env(safe-area-inset-bottom, 0px)); }
+  /* Silbar sube sobre Correr (a la izquierda, en columna): así el medio de la pantalla queda para la escena */
+  .toque .b-silbar { left: calc(26px + env(safe-area-inset-left, 0px)); bottom: calc(232px + env(safe-area-inset-bottom, 0px)); }
+  .toque .hud { padding-bottom: calc(290px * var(--k, 1) + env(safe-area-inset-bottom, 0px)); }
 }

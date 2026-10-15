@@ -531,7 +531,9 @@
     tq.x = ARCO.x - 0.35 + (B.x > 2.5 ? -0.25 : 0);
     if (j.celebra > 0) j.celebra -= dt; else t.anim = Math.abs(objZ - j.titoZ) > 0.05 ? 'caminar' : 'quieto';
     // ¡atajada!
-    if (j.pausa <= 0 && !j.dueno && B.vx > 0.3 && B.y < 1.35 && Math.hypot(B.x - tq.x, B.z - tq.z) < 0.4) {
+    // un tiro que va subiendo con fuerza le pasa por encima (en pantallas lentas se calcula a saltos y parecía atajable)
+    const porArriba = B.vy > 2.5 && B.y > 0.7;
+    if (j.pausa <= 0 && !j.dueno && !porArriba && B.vx > 0.3 && B.y < 1.35 && Math.hypot(B.x - tq.x, B.z - tq.z) < 0.4) {
       const tiro = Math.hypot(B.vx, B.vz) > 2.5;
       if (tiro) {
         j.atajadas++; j.celebra = 1.2; t.anim = 'saludar'; t.t = 0;
