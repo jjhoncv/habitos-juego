@@ -28,7 +28,10 @@
   caja.id = 'mapa';
   caja.hidden = true;
   caja.setAttribute('aria-label', 'Mapa de la casa. Pulsa M para agrandarlo');
-  caja.innerHTML = `<svg viewBox="-0.6 -4.2 26.2 8.3" aria-hidden="true">
+  caja.innerHTML = `<div class="m-estrellas" id="mEstrellas" aria-live="polite">
+    <span class="m-sem"><i aria-hidden="true">★</i><b id="mSemN">0</b><small>esta semana</small></span>
+    <span class="m-hoy"><small>Hoy</small><span class="m-hoy-est" id="mHoyEst">☆☆☆</span><small id="mHoyMetas"></small></span>
+  </div><svg viewBox="-0.6 -4.2 26.2 8.3" aria-hidden="true">
     ${Object.entries(CUARTOS).map(([id, c]) => `<g class="m-cuarto${c.exterior ? ' ext' : ''}${c.techo ? ' techo' : ''}" data-id="${id}">
       <rect x="${c.x}" y="${c.y}" width="${c.w}" height="${c.h}" rx="0.25"/>
       <text x="${c.x + c.w / 2}" y="${c.y + c.h / 2 + 0.25}">${c.nombre}</text></g>`).join('')}
@@ -47,7 +50,8 @@
   boton.className = 'b-mapa';
   boton.hidden = true;
   boton.setAttribute('aria-label', 'Ver el mapa de la casa');
-  boton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14"/></svg><span>Mapa</span>';
+  boton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14"/></svg><span>Mapa</span>'
+    + '<span class="bm-est" id="bmEst" aria-hidden="true"><b><i>★</i><span id="bmSemN">0</span></b><span class="bm-hoy" id="bmHoy">☆☆☆</span></span>';
   document.body.appendChild(boton);
 
   const yo = caja.querySelector('#mYo'), perro = caja.querySelector('#mPerro');
@@ -66,12 +70,61 @@
     alternar();
   });
 
+  // ---------- estrellas: las de la semana (diario) y las metas de hoy cumplidas (se animan al cumplir una)
+  const P = H.progreso;
+  const est = { sem: caja.querySelector('#mSemN'), hoy: caja.querySelector('#mHoyEst'), metas: caja.querySelector('#mHoyMetas'), caja: caja.querySelector('#mEstrellas'), bSem: boton.querySelector('#bmSemN'), bHoy: boton.querySelector('#bmHoy'), b: boton.querySelector('#bmEst') };
+  let antes = null, ultimaRevision = 0;
+  // ¿la meta ya está cumplida? (las que el motor decide de noche se adelantan con lo que ya hiciste)
+  function cumplida(id, S) {
+    const v = S.metas ? S.metas[id] : undefined;
+    if (v !== undefined) return v === true;
+    const f = S.f || {};
+    switch (id) {
+      case 'perro': return !!f.perroComio;
+      case 'colegio': return !!f.fueColegio;
+      case 'comer': return !!(f.desayuno && f.almorzo && f.ceno);
+      case 'cuarto': return !!(f.cama && f.juguetes && f.ropaSucia && f.zapatos && !f.mamaRecogio);
+      case 'ayudar': return !!f.riego;
+      case 'jugar': return !!f.jugoPerro;
+      default: return false;
+    }
+  }
+  function estrellas() {
+    const A = motor.api;
+    if (!P || !A || !A.S) return null;
+    const pr = P.cargar();
+    const ids = P.metas(A.perfil, pr.dia).map(([id]) => id);
+    const hechas = ids.filter((id) => cumplida(id, A.S)).length;
+    return { semana: P.totalEstrellas(pr), hoy: P.estrellasDe(hechas), hechas, total: ids.length };
+  }
+  const tira = (n) => '★'.repeat(n) + '☆'.repeat(Math.max(0, 3 - n));
+  function celebrar(el) { if (!el) return; el.classList.remove('gana'); void el.offsetWidth; el.classList.add('gana'); }
+  function pintarEstrellas(forzar) {
+    const t = performance.now();
+    if (!forzar && t - ultimaRevision < 500) return;
+    ultimaRevision = t;
+    const e = estrellas();
+    if (!e) return;
+    const clave = `${e.semana}|${e.hoy}|${e.hechas}/${e.total}`;
+    if (antes && antes.clave === clave) return;
+    est.sem.textContent = e.semana; est.bSem.textContent = e.semana;
+    est.hoy.textContent = tira(e.hoy); est.bHoy.textContent = tira(e.hoy);
+    est.metas.textContent = `${e.hechas} de ${e.total} metas`;
+    caja.setAttribute('aria-label', `Mapa de la casa. ${e.semana} estrellas esta semana. Hoy: ${e.hechas} de ${e.total} metas. Pulsa M para agrandarlo`);
+    boton.setAttribute('aria-label', `Ver el mapa de la casa. ${e.semana} estrellas esta semana; hoy ${e.hechas} de ${e.total} metas`);
+    // se anima cuando cumples una meta o ganas estrellas (no al empezar)
+    if (antes && (e.hechas > antes.hechas || e.semana > antes.semana || e.hoy > antes.hoy)) { celebrar(est.caja); celebrar(est.b); }
+    antes = Object.assign({ clave }, e);
+  }
+  if (motor.api && motor.api.alEvento) motor.api.alEvento((tipo) => { if (/^(habito|meta|accion|finDia|partidaCargada|colegio)$/.test(tipo)) setTimeout(() => pintarEstrellas(true), 50); });
+
   function cuadro() {
     const u = motor.ubicacion();
     const c = u && CUARTOS[u.lugar];
     const ver = !!(u && c && u.hud && !u.cargando);
     if (caja.hidden === ver) { caja.hidden = !ver; boton.hidden = !ver; }
     if (ver) {
+      pintarEstrellas();
       if (actual !== u.lugar) {
         actual = u.lugar;
         grupos.forEach((g) => g.classList.toggle('aqui', g.dataset.id === u.lugar));
@@ -94,4 +147,5 @@
     requestAnimationFrame(cuadro);
   }
   requestAnimationFrame(cuadro);
+  H.mapa = { estrellas, refrescar: () => pintarEstrellas(true) };
 })();

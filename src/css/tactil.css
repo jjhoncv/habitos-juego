@@ -311,3 +311,10 @@ html.toque:has(#lista:not(.plegada):not([hidden])) .crecer-hud { display: none !
   .toque .b-silbar { left: calc(26px + env(safe-area-inset-left, 0px)); bottom: calc(232px + env(safe-area-inset-bottom, 0px)); }
   .toque .hud { padding-bottom: calc(290px * var(--k, 1) + env(safe-area-inset-bottom, 0px)); }
 }
+
+/* ---------- tablet: Quédate (RECREO, perro.js lo ubica por JS junto a Silbar) en versión compacta,
+   ícono arriba y palabra abajo, para que quepa al lado de Silbar sin entrar al medio de la pantalla */
+@media (min-width: 700px) and (min-height: 600px) {
+  .toque .b-quedate { flex-direction: column; justify-content: center; gap: 0; padding: 3px 9px; border-radius: 16px; font-size: 13px; line-height: 1.05; }
+  .toque .b-quedate svg { width: 22px; height: 22px; }
+}

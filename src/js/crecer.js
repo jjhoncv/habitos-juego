@@ -50,6 +50,9 @@
     if (tipo === 'colegio') sumar('conocimiento', 5, 'fuiste al colegio');
     if (tipo === 'examen') sumar('conocimiento', Math.round(d.nota * 0.6), `examen (${d.nota} de 20)`);
     if (tipo === 'tarea') sumar('conocimiento', 3 + d.primera * 2, 'hiciste la tarea');
+    // colegio.js: cada clase y la revisión de la tarea (si no la hiciste, igual aprendes un poquito)
+    if (tipo === 'clase') sumar('conocimiento', 2 + (d.aciertos || 0), `clase de ${d.titulo || 'hoy'}`);
+    if (tipo === 'tareaRevisada') sumar('conocimiento', d.ok ? 3 : 1, d.ok ? 'la profe revisó tu tarea' : 'repasaste con la profe');
     if (tipo === 'estudio') sumar('conocimiento', 2 + d.primera + (d.conPerro ? 2 : 0), d.conPerro ? 'estudiaste con tu cachorro' : 'estudiaste en casa');
     if (tipo === 'habito') {
       if (d === 'Decir la verdad y hacerte cargo') sumar('responsabilidad', 3, 'dijiste la verdad');

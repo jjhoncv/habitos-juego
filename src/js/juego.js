@@ -686,16 +686,36 @@
     let k = 10;
     switch (P.anim) {
       case 'caminar': {
-        P.fase += dt * (2.4 + P.vel * 2.6);
+        // correr (P.corre lo pone el movimiento del jugador): cuerpo inclinado, zancada larga y rápida,
+        // brazos fuertes adelante y atrás, rebotes y polvito en los pies
+        const corre = !!P.corre && !agachado;
+        P.fase += dt * (corre ? 6.2 + P.vel * 1.6 : 2.4 + P.vel * 2.6);
         const s = Math.sin(P.fase);
-        T.mdx = s * 0.62; T.mix = -s * 0.62;
-        T.rdx = Math.max(0, -Math.sin(P.fase - 0.7)) * 0.9; T.rix = Math.max(0, Math.sin(P.fase - 0.7)) * 0.9;
-        T.bdx = -s * 0.55; T.bix = s * 0.55;
-        T.cy = Math.abs(Math.cos(P.fase)) * 0.045;
+        if (corre) {
+          const inc = 0.34;
+          T.cad = inc;
+          T.mdx = s * 1.0 - inc; T.mix = -s * 1.0 - inc;
+          T.rdx = 0.3 + Math.max(0, -Math.sin(P.fase - 0.6)) * 1.5; T.rix = 0.3 + Math.max(0, Math.sin(P.fase - 0.6)) * 1.5;
+          T.bdx = -s * 1.25 - 0.45; T.bix = s * 1.25 - 0.45;
+          T.bdz = 0.16; T.biz = -0.16;
+          T.cy = Math.abs(Math.cos(P.fase)) * 0.12;
+          T.cabx = -0.24;
+          k = 24;
+        } else {
+          T.mdx = s * 0.62; T.mix = -s * 0.62;
+          T.rdx = Math.max(0, -Math.sin(P.fase - 0.7)) * 0.9; T.rix = Math.max(0, Math.sin(P.fase - 0.7)) * 0.9;
+          T.bdx = -s * 0.55; T.bix = s * 0.55;
+          T.cy = Math.abs(Math.cos(P.fase)) * 0.045;
+          k = 18;
+        }
         const lado = s > 0;
-        if (P === jugador && P.ladoPaso !== undefined && lado !== P.ladoPaso) Sonido.sfx('paso');
+        if (P.ladoPaso !== undefined && lado !== P.ladoPaso) {
+          if (P === jugador) Sonido.sfx('paso');
+          if (corre) polvoPies(P.root, lado ? 1 : -1, 1);
+        }
         P.ladoPaso = lado;
-        k = 18; break;
+        if (corre) lineasVelocidad(P.root, dt, 1);
+        break;
       }
       case 'cepillar': T.bdx = -2.05; T.bdz = 0.6 + Math.sin(t * 22) * 0.13; T.bix = -0.15; break;
       case 'comer': T.bdx = Math.sin(t * 3.2) > 0.2 ? -2.0 : -1.2; T.bdz = 0.35; T.bix = -0.8; T.biz = -0.15; break;
@@ -835,8 +855,24 @@
     D.t += dt;
     const t = D.t;
     let colaV = 7, colaA = 0.45, paso = 0, cy = 0, cabX = 0, echado = 0;
+    // velocidad real (suavizada): si va rápido, o si te sigue mientras tú corres, galopa
+    const q = D.root.position;
+    if (D.px !== undefined && dt > 0) {
+      const v = Math.hypot(q.x - D.px, q.z - D.pz) / dt;
+      if (v < 12) D.vReal = lerp(D.vReal || 0, v, 1 - Math.exp(-dt * 8));
+    }
+    D.px = q.x; D.pz = q.z;
+    D.corre = D.anim === 'caminar' && ((D.vReal || 0) > 2.7 || (P.corre && P.anim === 'caminar' && (D.vReal || 0) > 1.0));
     switch (D.anim) {
-      case 'caminar': D.fase += dt * 13; paso = 0.65; cy = Math.abs(Math.sin(D.fase)) * 0.03; colaV = 11; break;
+      case 'caminar':
+        if (D.corre) {
+          D.fase += dt * 19; paso = 1.05; cy = Math.abs(Math.sin(D.fase)) * 0.09; colaV = 4; colaA = 0.15; cabX = -0.12;
+          const lado = Math.sin(D.fase) > 0;
+          if (D.ladoPaso !== undefined && lado !== D.ladoPaso) polvoPies(D.root, lado ? 1 : -1, 0.7);
+          D.ladoPaso = lado;
+          lineasVelocidad(D.root, dt, 0.6);
+        } else { D.fase += dt * 13; paso = 0.65; cy = Math.abs(Math.sin(D.fase)) * 0.03; colaV = 11; }
+        break;
       case 'feliz': colaV = 20; colaA = 0.85; cy = Math.abs(Math.sin(t * 7)) * 0.05; cabX = Math.sin(t * 7) * 0.1; break;
       case 'dormir': colaV = 1; colaA = 0.08; echado = 1; cabX = 0.35; break;
       case 'comer': cabX = 0.75 + Math.sin(t * 9) * 0.12; colaV = 12; colaA = 0.6; break;
@@ -844,14 +880,16 @@
     }
     const f = 1 - Math.exp(-dt * 10);
     D.patas.forEach((g, i) => {
-      const obj = echado ? (i < 2 ? -1.4 : 1.4) : Math.sin(D.fase + ((i === 0 || i === 3) ? 0 : PI)) * paso;
+      // al galopar las de adelante van juntas y las de atrás juntas (desfasadas)
+      const fase = D.corre ? (i < 2 ? 0 : PI * 0.8) + (i % 2) * 0.35 : ((i === 0 || i === 3) ? 0 : PI);
+      const obj = echado ? (i < 2 ? -1.4 : 1.4) : Math.sin(D.fase + fase) * paso;
       g.rotation.x = lerp(g.rotation.x, obj, f);
     });
     if (D.salto > 0) { D.salto = Math.max(0, D.salto - dt); cy += Math.sin((1 - D.salto / 0.55) * PI) * 0.45; }
     D.cuerpo.position.y = lerp(D.cuerpo.position.y, cy - echado * 0.2, D.salto > 0 ? 1 : f);
     D.cabeza.rotation.x = lerp(D.cabeza.rotation.x, cabX, f);
     D.cola.rotation.y = Math.sin(t * colaV) * colaA;
-    D.orejas.forEach((o, i) => { o.rotation.x = D.anim === 'caminar' || D.salto > 0 ? Math.sin(t * 14 + i) * 0.25 : 0; });
+    D.orejas.forEach((o, i) => { o.rotation.x = D.corre ? -0.7 + Math.sin(t * 22 + i) * 0.3 : D.anim === 'caminar' || D.salto > 0 ? Math.sin(t * 14 + i) * 0.25 : 0; });
     D.lengua.visible = D.anim === 'feliz' || D.anim === 'caminar';
   }
   function crearAbuela() {
@@ -1840,7 +1878,7 @@
       tardanza ? 'Se fue el bus: papá te lleva enojado.' : 'Vas en el bus del colegio.',
       S.dinero ? 'Papá te dio S/ 3 de propina.' : 'Papá no te dio propina: "No hiciste tus cosas".',
       S.f.desayuno === 'bueno' ? 'Desayunaste bien: vas con energía.' : 'No desayunaste bien: ya te suena el estómago.',
-      S.f.mochila ? 'Llevas tu tarea en la mochila.' : 'Tu tarea se quedó en el escritorio.',
+      S.f.mochila ? 'Llevas tu mochila lista.' : 'No alistaste la mochila: a ver qué cuadernos llevas.',
     ];
     cambiarFase('colegio', 8 * 60 + (tardanza ? 20 : 0));
     irA('aula', { desde: 'calle', titulo: 'Colegio', tips });
@@ -1866,10 +1904,11 @@
   function irACasa() {
     if (!S.f.comioKiosco) anotar('En el recreo no comiste nada.', 'mal');
     anotar(S.f.comioKiosco === 'bien' ? 'Clases hasta la 1:00 pm. Aguantaste gracias al sándwich.' : 'Clases hasta la 1:00 pm con el estómago vacío. No entendiste nada.', S.f.comioKiosco === 'bien' ? 'bien' : 'mal', '13:00');
+    // el colegio (colegio.js) deja la tarea si no se dejó y cuenta lo que aprendiste
+    const delColegio = window.Habitos.colegio ? window.Habitos.colegio.alSalir() : [`Tu nota en el examen: ${S.nota != null ? S.nota : '—'} de 20.`];
     const tips = [
-      'Pasaron tres horas más de clases.',
       S.f.comioKiosco === 'bien' ? 'Comiste en el recreo: llegas con algo de hambre.' : 'No comes nada desde la mañana: llegas con MUCHA hambre.',
-      `Tu nota en el examen: ${S.nota != null ? S.nota : '—'} de 20.`,
+      ...delColegio,
       'Mamá te está esperando en el comedor.',
     ];
     cambiarFase('tarde', 14 * 60);
@@ -1888,6 +1927,7 @@
     const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cv) }));
     m.position.set(x, y, z + 0.03);
     E.scene.add(m);
+    return m;   // colegio.js le pone su propia pizarra (la lección del día)
   }
   function nino(o) { const n = crearPersona(Object.assign({ escala: 0.72, cabezaGrande: true, pantalon: '#2e3d6b', camisa: '#f6f7f9' }, o)); n.voz = 'nino'; return n; }
 
@@ -1898,7 +1938,7 @@
       puertas: [{ lado: 'izq', c: 2.4, ancho: 1.2, salida: true, a: 'calle', nombre: 'Pasillo del colegio' }],
     });
     const sc = E.scene;
-    pizarra(E, 0, 1.65, -E.d / 2 + 0.02, 4.2, 1.5, ['Examen de matemáticas', PERFIL && (PERFIL.edad || 7) >= 9 ? 'Tablas de multiplicar' : 'Sumas y restas', 'Hoy se entrega la tarea']);
+    E.pizarra = pizarra(E, 0, 1.65, -E.d / 2 + 0.02, 4.2, 1.5, ['2.º grado', 'Buenos días']);
     ventana(E, -3.7, 1.2, 1.0);
     ventana(E, 3.7, 1.2, 1.0);
     box(sc, 1.8, 0.75, 0.8, '#8a5a3b', 0, 0.375, -2.4);
@@ -1919,6 +1959,7 @@
       E.solido(x, z, 0.9, 0.6);
     };
     const colores = [['#de5546', '#3b2418'], ['#2aa876', '#1d1612'], ['#f2a623', '#6b3d22'], ['#8f73cf', '#2b1d14']];
+    E.companeros = [];   // colegio.js les pone nombre y voz (responden en clase)
     [[-3, 0], [0, 0], [3, 0], [-3, 2.2], [0, 2.2], [3, 2.2]].forEach(([x, z], i) => {
       carpeta(x, z);
       if (i < 4) {
@@ -1929,9 +1970,15 @@
         k.anim = 'leer';
         sc.add(k.root);
         E.npcs.push(k);
+        E.companeros.push(k);
       }
     });
     E.inicio = { pos: [-4.0, 2.4], rot: PI / 2 };
+    // la profesora, tu carpeta, las clases y la revisión de la tarea: colegio.js (A.alConstruir('aula'))
+    E.alEntrar = () => {
+      if (S.energia < 40) setTimeout(() => { decir(P, 'Tengo hambre…', 2.5); Sonido.sfx('tripa'); }, 5200);
+    };
+    if (window.Habitos.colegio) return E;
     E.inters.push(etiquetaInter('Profesora', [0, -1.55], [0, -3.2], 1.2, {
       alto: 2.0,
       activo: () => !S.f.tareaEntregada,
@@ -1966,9 +2013,10 @@
 
   // ---------- Examen (minijuego)
   let examen = null;
-  function iniciarExamen() {
+  // fin: qué pasa al terminar (colegio.js: el cálculo mental al final de Matemática); sin fin, al recreo
+  function iniciarExamen(fin) {
     const max = 2.6 + 6 * S.energia / 100 + 1.6 * S.motivacion / 100 + (S.f.mochila ? 1.2 : 0);
-    examen = { i: 0, ok: 0, n: 5, t: max, max, preg: null, hambre: S.energia < 35, grr: 1.5, bloq: false };
+    examen = { i: 0, ok: 0, n: 5, t: max, max, preg: null, hambre: S.energia < 35, grr: 1.5, bloq: false, fin: typeof fin === 'function' ? fin : null };
     P.sentado = true; P.anim = 'leer';
     P.root.position.set(3, 0, 2.72); P.root.rotation.y = PI;
     $('#exHoja').classList.toggle('hambre', examen.hambre);
@@ -2059,6 +2107,11 @@
     cambiar(aprobo ? { animo: 8, motivacion: 6 } : { animo: -12, motivacion: -8 });
     if (nota >= 16) habito('Rendir bien en el examen');
     else if (!aprobo) malHabito('Desaprobar el examen');
+    if (e.fin) {
+      decir(escena.profe, aprobo ? `Muy bien, ${CFG.nombre}: sacaste ${nota} en cálculo mental.` : `${CFG.nombre}, sacaste ${nota}. Con un buen desayuno se piensa mejor. ¡Mañana practicamos más!`, 4);
+      setTimeout(e.fin, 3200);
+      return;
+    }
     decir(escena.profe, aprobo ? `Muy bien, ${CFG.nombre}: sacaste ${nota}.` : `${CFG.nombre}, sacaste ${nota}. Así no vas a pasar el bimestre. Voy a escribirle a tu mamá.`, 4);
     setTimeout(() => { Sonido.sfx('timbre'); avisar('¡Riiing! Suena el timbre del recreo.'); }, 4200);
     setTimeout(() => irA('patio', {
@@ -2141,8 +2194,9 @@
     E.inters.push(etiquetaInter('Salida', [4.2, -3.2], [4.2, -4.0], 1.0, {
       activo: () => true,
       abrir: () => ({
-        titulo: 'Fin del recreo', texto: 'Suena el timbre. Después del recreo tienes clases hasta la 1:00 pm y luego vuelves a casa.',
-        opciones: [{ texto: 'Volver a clases y terminar el día', nota: S.f.comioKiosco === 'bien' ? 'Comiste algo: aguantarás.' : 'Con el estómago vacío, tres horas más se hacen eternas.', min: 0, ef: {}, anim: 'saludar', dur: 0.8, esfuerzo: false, progreso: 'Volviendo a clases', alTerminar: irACasa }],
+        titulo: 'Fin del recreo', texto: (() => { const C = window.Habitos.colegio, s = C && C.temaDe(C.hoy(), 2); return s ? `Suena el timbre. Vuelves al aula: ahora toca ${C.CURSOS[s.curso].nombre}. Después, a casa.` : 'Suena el timbre. Después del recreo tienes clases hasta la 1:00 pm y luego vuelves a casa.'; })(),
+        opciones: [{ texto: 'Volver a clases', nota: S.f.comioKiosco === 'bien' ? 'Comiste algo: aguantarás.' : 'Con el estómago vacío, la clase se hace larguísima.', min: 0, ef: {}, anim: 'saludar', dur: 0.8, esfuerzo: false, progreso: 'Volviendo a clases',
+          alTerminar: () => (window.Habitos.colegio ? window.Habitos.colegio.volverAClase() : irACasa()) }],
       }),
     }));
     E.alEntrar = () => {
@@ -2510,8 +2564,37 @@
   }
   // lo que dice la etiqueta: a veces cambia según el momento (la mesa es "Desayuno" cuando está servido)
   const rotulo = (it) => (it.rotulo && it.rotulo()) || it.nombre;
+  // si dos etiquetas caen en el mismo sitio de la pantalla (Mochila y Escritorio, por ejemplo),
+  // la de más arriba se corre hacia arriba hasta que no se toquen: se apilan en vez de encimarse
+  function separarEtiquetas(dt) {
+    const vis = [];
+    etqObjetos.forEach((o) => {
+      if (o.el.hidden) { o.dy = 0; o.el.style.top = (o.sy || 0) + 'px'; return; }
+      if (!o.w) { o.w = o.el.offsetWidth; o.h = o.el.offsetHeight; }
+      vis.push(o);
+    });
+    vis.sort((a, b) => b.sy - a.sy);
+    const puestos = [], GAP = 5;
+    vis.forEach((o) => {
+      const k = o.el.classList.contains('cerca') ? 1.15 : 1;
+      const w = o.w * k, h = o.h * k;
+      let y = o.sy;
+      for (let vuelta = 0; vuelta < vis.length; vuelta++) {
+        const choca = puestos.find((p) => Math.abs(o.sx - p.x) < (w + p.w) / 2 + GAP && y > p.y - p.h - GAP && y - h < p.y + GAP);
+        if (!choca) break;
+        y = choca.y - choca.h - GAP;
+      }
+      puestos.push({ x: o.sx, y, w, h });
+      const obj = y - o.sy;
+      // se mueve suave, pero si tiene que subir lo hace rápido para no encimarse ni un momento
+      o.dy = obj < (o.dy || 0) - 2 ? obj : lerp(o.dy || 0, obj, 1 - Math.exp(-dt * 10));
+      o.el.style.top = (o.sy + o.dy) + 'px';
+    });
+  }
+  window.addEventListener('resize', () => etqObjetos.forEach((o) => { o.w = 0; }));
   function textosObjetos() {
     etqObjetos.forEach((o) => {
+      o.w = 0;
       const m = minutosDe(o.it);
       o.tieneTiempo = !!m;
       o.el.innerHTML = `<span class="n">${rotulo(o.it)}</span>${m ? `<span class="m">${ICONOS.reloj}${m}</span>` : ''}`;
@@ -2533,15 +2616,46 @@
     const el = quien === P ? $('#burbuja') : $('#burbujaNpc');
     el.textContent = texto;
     el.hidden = false;
-    burbujas.set(el, { quien, hasta: reloj + (seg || 3) });
+    burbujas.set(el, { quien, hasta: reloj + segLectura(texto, seg || 3) });
     if (conVoz !== false) Sonido.hablar(texto, quien === P ? 'yo' : (quien.voz || 'nino'));
   }
+  // tiempo para leer: un niño de 7 años lee despacio (≈ 0.09 s por letra en burbujas, 0.11 s en avisos)
+  function segLectura(texto, seg, porLetra) {
+    const n = String(texto || '').length;
+    return NINO ? Math.max(seg, n * (porLetra || 0.09)) : seg;
+  }
+  // avisos: duran según el largo (mínimo 6 s), se apilan (máx. 3), se cierran tocándolos
+  // y no se van mientras el narrador todavía los está leyendo
+  function quitarAviso(d) {
+    if (!d.isConnected || d.classList.contains('sale')) return;
+    d.classList.add('sale');
+    clearTimeout(d.timer);
+    setTimeout(() => d.remove(), 450);
+  }
   function avisar(txt, tipo) {
-    const d = document.createElement('div');
-    d.textContent = txt;
-    if (tipo) d.className = tipo;
-    $('#aviso').appendChild(d);
-    setTimeout(() => d.remove(), 4300);
+    const cont = $('#aviso');
+    const igual = [...cont.children].find((x) => x.textContent === txt && !x.classList.contains('sale'));
+    const d = igual || document.createElement('div');
+    if (!igual) {
+      d.textContent = txt;
+      if (tipo) d.className = tipo;
+      d.title = 'Toca para cerrar';
+      d.addEventListener('pointerdown', (e) => { e.stopPropagation(); quitarAviso(d); });
+      cont.appendChild(d);
+      const vivos = [...cont.children].filter((x) => !x.classList.contains('sale'));
+      if (vivos.length > 3) quitarAviso(vivos[0]);
+    }
+    const seg = NINO ? Math.max(6, txt.length * 0.11) : Math.max(4.3, txt.length * 0.07);
+    const fin = performance.now() + seg * 1000, tope = fin + 12000;
+    d.dataset.dura = seg.toFixed(1);
+    clearTimeout(d.timer);
+    const mirar = () => {
+      const voz = window.Habitos.voz;
+      const ahora = performance.now();
+      if (ahora < tope && (ahora < fin || (voz && voz.leyendo && voz.leyendo(txt)))) { d.timer = setTimeout(mirar, Math.max(300, fin - ahora)); return; }
+      quitarAviso(d);
+    };
+    d.timer = setTimeout(mirar, seg * 1000);
   }
   function banner(tipo, titulo, texto, sub) {
     const el = document.createElement('div');
@@ -2549,8 +2663,11 @@
     const ico = tipo === 'bien' ? ICONOS.estrella : tipo === 'urg' ? ICONOS.reloj : ICONOS.roto;
     el.innerHTML = `<span class="l-ico">${ico}</span><div class="l-txt"><small>${titulo}</small><b>${texto}</b>${sub ? `<span>${sub}</span>` : ''}</div>`;
     $('#logros').appendChild(el);
-    setTimeout(() => el.classList.add('sale'), 3300);
-    setTimeout(() => el.remove(), 3800);
+    const ms = segLectura([titulo, texto, sub].filter(Boolean).join(' '), 4.2) * 1000;
+    el.dataset.dura = (ms / 1000).toFixed(1);
+    el.addEventListener('pointerdown', (e) => { e.stopPropagation(); el.classList.add('sale'); setTimeout(() => el.remove(), 450); });
+    setTimeout(() => el.classList.add('sale'), ms);
+    setTimeout(() => el.remove(), ms + 500);
   }
   function flash(tipo) {
     const f = $('#flash');
@@ -2736,6 +2853,28 @@
     m.scale.setScalar(tam);
     escena.scene.add(m);
     particulas.push({ m, vel, vida, max: vida, tam, grav: grav || 0 });
+  }
+  // al correr: nubecitas de polvo donde pisa (lado = 1 derecha, -1 izquierda) y rayitas de viento detrás
+  let polvos = 0;
+  function polvoPies(root, lado, esc) {
+    if (!escena || particulas.length > 260) return;
+    const q = root.position, ry = root.rotation.y, fx = Math.sin(ry), fz = Math.cos(ry);
+    const px = q.x + Math.cos(ry) * 0.1 * lado * esc - fx * 0.12, pz = q.z - Math.sin(ry) * 0.1 * lado * esc - fz * 0.12;
+    const color = escena.exterior ? '#d8c39a' : '#e9e2d4';
+    for (let i = 0; i < 4; i++) {
+      emitir(new THREE.Vector3(px + (Math.random() - 0.5) * 0.12, q.y + 0.05, pz + (Math.random() - 0.5) * 0.12), color,
+        new THREE.Vector3(-fx * (0.5 + Math.random() * 0.5) + (Math.random() - 0.5) * 0.6, 0.35 + Math.random() * 0.35, -fz * (0.5 + Math.random() * 0.5) + (Math.random() - 0.5) * 0.6),
+        0.5 + Math.random() * 0.2, (0.06 + Math.random() * 0.04) * esc, 0.6, 0.6);
+    }
+    if (root === P.root) polvos++;
+  }
+  function lineasVelocidad(root, dt, esc) {
+    root.userData.rayitas = (root.userData.rayitas || 0) - dt;
+    if (root.userData.rayitas > 0 || !escena || particulas.length > 260) return;
+    root.userData.rayitas = 0.07;
+    const q = root.position, ry = root.rotation.y, fx = Math.sin(ry), fz = Math.cos(ry), lado = Math.random() < 0.5 ? -1 : 1;
+    const x = q.x + Math.cos(ry) * 0.32 * lado * esc - fx * 0.2, z = q.z - Math.sin(ry) * 0.32 * lado * esc - fz * 0.2;
+    emitir(new THREE.Vector3(x, q.y + (0.45 + Math.random() * 0.8) * esc, z), '#ffffff', new THREE.Vector3(-fx * 3.2, 0, -fz * 3.2), 0.22, 0.03 * esc, 0, 0.55);
   }
   function actualizarParticulas(dt) {
     for (let i = particulas.length - 1; i >= 0; i--) {
@@ -3277,7 +3416,7 @@
     v.i++;
     if (v.i < v.lineas.length) {
       const txt = v.lineas[v.i];
-      v.t = 1.4 + txt.length * 0.065;
+      v.t = segLectura(txt, 1.4 + txt.length * 0.065, 0.09);   // que alcance a leerlo
       v.maxT = v.t + 6;
       decir(v.mama, txt, v.t + 0.3);
       v.mama.anim = 'senalar';
@@ -3763,8 +3902,9 @@
       [f.jugoPerro ? 'si' : 'no', f.jugoPerro ? `Jugaste fútbol con ${PERFIL ? PERFIL.mascota.nombre : 'tu perro'}` : 'No jugaste con tu perro'],
     ] : [
       ['tit', 'En el colegio'],
-      [f.tareaEntregada === 'si' ? 'si' : 'no', f.tareaEntregada === 'si' ? 'Entregaste la tarea' : 'No entregaste la tarea'],
-      [S.nota >= 11 ? 'si' : 'no', `Examen: ${S.nota != null ? S.nota : 0} de 20`],
+      ...(f.tareaEntregada ? [[f.tareaEntregada === 'si' ? 'si' : 'no', f.tareaEntregada === 'si' ? 'Entregaste la tarea' : 'No entregaste la tarea']] : []),
+      ...(f.colAprendio && f.colAprendio.length ? [['si', `Aprendiste: ${f.colAprendio.join(' y ')}`]] : f.fueColegio ? [['no', 'No atendiste las clases']] : []),
+      ...(S.nota != null ? [[S.nota >= 11 ? 'si' : 'no', `Cálculo mental: ${S.nota} de 20`]] : []),
       [f.comioKiosco === 'bien' ? 'si' : f.comioKiosco ? 'medio' : 'no', f.comioKiosco === 'bien' ? 'Comiste en el recreo' : f.comioKiosco ? 'Golosinas en el recreo' : S.dinero > 0 ? 'No comiste en el recreo' : 'Sin propina: no comiste en el recreo'],
       [f.jugo === 'si' ? 'si' : lluvia() ? 'medio' : 'no', f.jugo === 'si' ? 'Jugaste con tus amigos' : lluvia() ? 'Llovió: no hubo fútbol en el recreo' : 'No jugaste en el recreo'],
     ]).concat([
@@ -3780,7 +3920,8 @@
       c.push(f.riego ? ['bien', 'Ayudaste en casa'] : ['mal', 'No ayudaste en casa']);
       c.push(f.jugoPerro ? ['bien', 'Jugaste con tu perro'] : ['mal', 'Tu perro se aburrió']);
     } else {
-      c.push(S.nota >= 11 ? ['bien', `Rendiste en el examen (${S.nota})`] : ['mal', `Hambre en el examen (${S.nota != null ? S.nota : 0})`]);
+      if (S.nota != null) c.push(S.nota >= 11 ? ['bien', `Rendiste en el examen (${S.nota})`] : ['mal', `Hambre en el examen (${S.nota})`]);
+      else c.push(f.colHambre ? ['mal', 'Hambre en clase'] : f.colAprendio ? ['bien', 'Atendiste en clase'] : ['mal', 'Sin clases']);
       c.push(S.dinero > 0 || f.comioKiosco === 'bien' ? ['bien', 'Propina para comer'] : ['mal', 'Sin propina, sin comida']);
     }
     c.push(f.mamaMolesta ? ['mal', 'Mamá molesta'] : ['bien', 'Mamá contenta']);
@@ -3794,7 +3935,7 @@
     const manana = [
       [motMan >= 45, `Motivación al despertar: <b>${motMan}</b>${motMan < 45 ? ' (empiezas con flojera)' : ''}`],
       [confMan >= 60, `Propina: <b>${confMan >= 60 ? 'S/ 3' : 'nada'}</b> (confianza de tus papás: ${confMan})`],
-      [!!f.tareaTarde, f.tareaTarde ? 'Llevas la tarea lista.' : 'Otra vez sin tarea: <b>la profesora va a citar a tus papás.</b>'],
+      [!!f.tareaTarde, f.tareaTarde ? 'Llevas la tarea lista.' : 'Sin tarea: <b>mañana la profe te lo explica otra vez.</b>'],
       [ordenado, ordenado ? 'Tu cuarto ya está ordenado: ganas tiempo en la mañana.' : 'Tu cuarto sigue desordenado: <b>mañana tendrás todavía más cosas que hacer.</b>'],
       [!!f.ropaSucia, f.ropaSucia ? 'Mamá lavó tu ropa: tienes uniforme limpio.' : 'Tu ropa sucia sigue en el piso: <b>no hay uniforme limpio para mañana.</b>'],
     ];
@@ -4047,6 +4188,7 @@
     reloj += dt;
     if (cine) actualizarCine(dt);
     if (primera) actualizarDespertar(dt);
+    P.corre = false;
     if (jugando && !cargando) {
       if (visita) actualizarVisita(dt);
       if (levantando) actualizarLevantarse(dt);
@@ -4076,6 +4218,7 @@
           const corre = corriendo() && !agachado;
           const v = velocidad() * fuerza * (corre ? 1.75 : 1) * (agachado && !salto.enAire ? 0.5 : 1);
           if (corre) S.energia = Math.max(0, S.energia - dt * 0.12);   // correr cansa un poquito
+          P.corre = corre && !salto.enAire;
           mover(dx * v * dt, dz * v * dt);
           girarHacia(dx, dz, dt);
           if (P.anim !== 'caminar') P.anim = 'caminar';
@@ -4175,8 +4318,10 @@
       const activo = !o.it.activo || o.it.activo();
       o.el.hidden = !s.ok || cargando || !jugando || !activo || !o.tieneTiempo || alarmaActiva || levantando;
       o.el.classList.toggle('cerca', o.it === cerca);
-      o.el.style.left = s.x + 'px'; o.el.style.top = s.y + 'px';
+      o.sx = s.x; o.sy = s.y;
+      o.el.style.left = s.x + 'px';
     });
+    separarEtiquetas(dt);
     burbujas.forEach((b, el) => {
       if (reloj > b.hasta) { el.hidden = true; burbujas.delete(el); return; }
       const c = cabezaMundo(b.quien).clone();
@@ -4631,6 +4776,7 @@
     if (t.i >= t.pasos.length) { terminarTutorial(); return; }
     const p = t.pasos[t.i];
     t.pausa = !!p.pausa;
+    t.desde = reloj;   // lo que se cumple solo no avanza hasta que dio tiempo de leer el paso
     t.foco = p.foco || null;
     if (t.foco) $(t.foco).classList.add('foco');
     $('#gPaso').textContent = t.i < t.pasos.length - 1 ? `Aprende a jugar · ${t.i + 1} de ${t.pasos.length - 1}` : 'Tutorial completo';
@@ -4653,7 +4799,8 @@
     t.recorrido += P.root.position.distanceTo(t.ultima);
     t.ultima.copy(P.root.position);
     if (typeof p.texto === 'function') { const tx = p.texto(); if ($('#gTexto').textContent !== tx) $('#gTexto').textContent = tx; }
-    if (p.hecho && p.hecho(t)) avanzarTutorial();
+    const leido = reloj - (t.desde || 0) >= Math.min(3.5, $('#gTexto').textContent.length * 0.05);
+    if (p.hecho && p.hecho(t) && leido) avanzarTutorial();
   }
   $('#gOk').addEventListener('click', () => { if (tutorial) avanzarTutorial(); });
 
@@ -4879,6 +5026,9 @@
     camaraPrimeraPersona: (on, o) => camaraPrimeraPersona(on, o),
     get primeraPersona() { return !!primeraP; },
     estado: () => ({ jugando, cargando, accion: !!accion, panel: !!panelAbierto, visita: !!visita, examen: !!examen, levantando: !!levantando, alarma: alarmaActiva, cine: !!cine, tutorial: !!tutorial, vitrina: !!vitrina, mamaHabla: mamaHabla(), charla: !!charla, fase: S.fase }),
+    // el colegio (colegio.js): cálculo mental con hambre/energía y la salida a casa
+    examen: (fin) => iniciarExamen(fin),
+    irACasa: () => irACasa(),
     alConstruir: (f) => ganchos.construir.push(f),
     alActualizar: (f) => ganchos.actualizar.push(f),
     alTecla: (f) => ganchos.tecla.push(f),
@@ -4895,7 +5045,7 @@
   };
 
   // gancho solo para las pruebas automáticas (tests/)
-  if (window.HABITOS_DEBUG) window.__T = { S, P, fin, irACasa, irA, visitaMama, dormir, get escondido() { return escondido; }, get flags() { return { cargando, panelAbierto, alarmaActiva, accion: !!accion, examen: !!examen, levantando: !!levantando, hablaEnComedor, jugando, cola: colaVisitas.length }; }, get escena() { return escena; }, get visita() { return visita; }, get charla() { return charla; } };
+  if (window.HABITOS_DEBUG) window.__T = { S, P, fin, irACasa, irA, visitaMama, dormir, get escondido() { return escondido; }, get flags() { return { cargando, panelAbierto, alarmaActiva, accion: !!accion, examen: !!examen, levantando: !!levantando, hablaEnComedor, jugando, cola: colaVisitas.length }; }, get escena() { return escena; }, get visita() { return visita; }, get charla() { return charla; }, get polvos() { return polvos; } };
 
   // ---------------------------------------------------------------- arranque
   construir('dormitorio', null);

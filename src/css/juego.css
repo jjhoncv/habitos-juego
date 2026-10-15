@@ -258,6 +258,7 @@ body {
   box-shadow: 5px 5px 0 var(--tinta);
   animation: logro .55s cubic-bezier(.2,1.6,.4,1);
 }
+.logro { pointer-events: auto; cursor: pointer; }   /* se cierra tocándolo */
 .logro.sale { animation: logroSale .45s ease-in forwards; }
 .logro.bien { background: linear-gradient(135deg, #fff6c9, #ffd864); }
 .logro.mal { background: linear-gradient(135deg, #ffe1dc, #ff9f8f); }
@@ -415,12 +416,16 @@ kbd {
   font-size: 14px;
   font-weight: 600;
   text-align: center;
-  animation: aviso 4.2s ease forwards;
+  animation: aviso .35s ease;
   box-shadow: 3px 3px 0 rgba(0,0,0,.25);
+  pointer-events: auto;   /* se cierra tocándolo */
+  cursor: pointer;
 }
+.aviso div.sale { animation: avisoSale .45s ease forwards; pointer-events: none; }
 .aviso div.bien { background: var(--bueno); }
 .aviso div.mal { background: var(--malo); }
-@keyframes aviso { 0% { opacity: 0; transform: translateY(-8px); } 8%, 85% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes aviso { 0% { opacity: 0; transform: translateY(-8px); } 100% { opacity: 1; transform: none; } }
+@keyframes avisoSale { 100% { opacity: 0; transform: translateY(-6px); } }
 
 .progreso {
   position: fixed;

@@ -1,0 +1,67 @@
+/* El colegio (colegio.js): la clase con la pizarra, la mochila con los cuadernos y el horario */
+.clase {
+  position: fixed; inset: 0; z-index: 44; display: flex; flex-direction: column; justify-content: space-between; align-items: center;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 16px calc(14px + env(safe-area-inset-bottom, 0px));
+  pointer-events: none; background: linear-gradient(rgba(29,35,64,.35), transparent 45%, transparent 55%, rgba(29,35,64,.45));
+}
+.clase[hidden] { display: none; }
+.cl-arriba, .cl-abajo { pointer-events: auto; width: min(900px, 100%); }
+.cl-cab { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 6px; }
+.cl-curso { font: 800 22px/1 var(--f-display); background: var(--c, #3d9bd4); color: #fff; border: 2px solid var(--tinta); border-radius: 999px; padding: 6px 14px; box-shadow: 3px 3px 0 var(--tinta); }
+.cl-fase { font-weight: 800; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.6); }
+.cl-marco { border: 8px solid #8a5a3b; border-radius: 10px; box-shadow: 6px 6px 0 var(--tinta); background: #2f5d46; line-height: 0; }
+.cl-pizarra { width: 100%; height: auto; display: block; border-radius: 3px; }
+.cl-abajo { background: var(--papel, #fffdf6); border: 2px solid var(--tinta); border-radius: 16px; box-shadow: 6px 6px 0 var(--tinta); padding: 12px 16px 14px; }
+.cl-quien { margin: 0; font: 800 15px var(--f-display); letter-spacing: .06em; text-transform: uppercase; color: var(--coral); }
+.cl-quien[data-quien="yo"] { color: var(--cielo); }
+.cl-quien[data-quien="comp"] { color: var(--bueno); }
+.cl-texto { margin: 4px 0 10px; font-size: 20px; font-weight: 700; line-height: 1.4; min-height: 1.4em; }
+.cl-ops { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.cl-ops:empty { display: none; }
+.cl-op { grid-template-columns: auto 1fr; align-items: center; padding: 14px 12px; min-height: 60px; }
+.cl-op kbd { grid-row: auto; align-self: center; }
+.cl-op .op-t { font-size: 22px; font-family: var(--f-display); }
+.cl-op.correcta { background: #c9f0db; border-color: var(--bueno); opacity: 1; }
+.cl-op.mala { background: #fbd3cc; border-color: var(--malo); opacity: 1; }
+.cl-op.era { outline: 3px dashed var(--bueno); outline-offset: 2px; opacity: 1; }
+.cl-seguir { display: block; margin-left: auto; min-width: 160px; min-height: 52px; font-size: 20px; }
+.cl-seguir[hidden] { display: none; }
+
+/* la mochila: horario de la semana y cuadernos de colores */
+.col-mochila { z-index: 46; }
+.cm-hoja { width: min(680px, 100%); }
+.cm-hoja h2 { margin: 2px 0 10px; font: 800 26px/1.1 var(--f-display); }
+.cm-tabla { width: 100%; border-collapse: separate; border-spacing: 4px; margin-bottom: 8px; font-size: 13px; }
+.cm-tabla th { font: 800 14px var(--f-display); color: var(--tinta-2); }
+.cm-tabla td { background: #fff; border: 2px solid var(--c); border-radius: 8px; padding: 4px; text-align: center; font-weight: 700; line-height: 1.2; }
+.cm-tabla td span { display: block; font-size: 18px; }
+.cm-tabla .hoy { background: #fff6d9; }
+.cm-tabla th.hoy { color: var(--coral); }
+.cm-tabla td.hoy { box-shadow: 0 0 0 3px var(--sol); }
+.cm-tarea { margin: 0 0 10px; padding: 8px 12px; background: #fff6d9; border-left: 5px solid var(--sol); border-radius: 8px; font-weight: 700; }
+.cm-tarea[hidden] { display: none; }
+.cm-cuadernos { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+.cm-cuad {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 120px; padding: 10px 8px;
+  background: var(--c); color: #fff; border: 3px solid var(--tinta); border-radius: 6px 14px 14px 6px; box-shadow: 4px 4px 0 var(--tinta);
+  font: 800 15px/1.15 var(--f-display); cursor: pointer; text-shadow: 0 1px 2px rgba(0,0,0,.35); opacity: .62; transition: transform .12s, opacity .12s;
+}
+.cm-cuad::before { content: ''; position: absolute; left: 8px; top: 6px; bottom: 6px; width: 4px; border-left: 3px dotted rgba(255,255,255,.7); }
+.cm-cuad .cm-emoji { font-size: 34px; text-shadow: none; }
+.cm-cuad.on { opacity: 1; transform: translateY(-4px); }
+.cm-cuad.on::after { content: '✓'; position: absolute; top: -12px; right: -10px; width: 30px; height: 30px; border-radius: 50%; background: var(--menta, #2aa876); border: 2px solid var(--tinta); display: grid; place-items: center; font-size: 18px; }
+.cm-msg { min-height: 1.4em; margin: 12px 0 8px; font-weight: 800; color: var(--tinta-2); }
+.cm-msg.mal { color: var(--malo); }
+.cm-pie { display: flex; justify-content: flex-end; }
+.cm-pie .btn { min-height: 52px; font-size: 18px; }
+
+/* el horario en la tarjeta del día */
+.cap-horario { margin: 6px 0 0; font-weight: 700; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.cap-curso { display: inline-block; padding: 2px 10px; border-radius: 999px; border: 2px solid var(--c); background: #fff; }
+
+@media (max-width: 640px) {
+  .cl-texto { font-size: 17px; }
+  .cl-curso { font-size: 17px; }
+  .cm-cuad { min-height: 96px; }
+  .cm-tabla { font-size: 11px; }
+}

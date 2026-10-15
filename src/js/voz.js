@@ -91,6 +91,13 @@
     soltar(p);
     return true;
   }
+  // ¿todavía está leyendo (o por leer) este texto? juego.js no quita el aviso hasta que termine
+  function leyendo(texto) {
+    const t = limpiar(texto);
+    if (!t || !activo()) return false;
+    if (pend && pend.texto === t) return true;
+    return suena(actual) && ultimo === actual && (actual.texto === t || actual.texto.indexOf(t.slice(0, 24)) >= 0);
+  }
   function callar(tipo) {
     if (pend && (!tipo || pend.tipo === tipo)) pend = null;
     if (suena(actual) && ultimo === actual && (!tipo || actual.tipo === tipo)) {
@@ -351,6 +358,6 @@
   A.senalar = A.señalar;
   H.voz = {
     leer: A.leer, callar: A.callar, señalar: A.señalar, activo, setActivo, iconoDe, historial, ocupado,
-    señalados: () => señalados.size, leerTarjeta,
+    señalados: () => señalados.size, leerTarjeta, leyendo,
   };
 })();

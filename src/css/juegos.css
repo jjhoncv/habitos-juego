@@ -1,0 +1,52 @@
+/* Juegos con los amigos en el recreo y el minijuego de la PS5 (juegos.js).
+   El marcador, los botones y "Cómo jugar" del recreo usan las clases del fútbol (futbol.css / tactil.css). */
+.jg-estado { font: 800 15px var(--f-display); opacity: 1; color: var(--sol); }
+.toque .jg-estado { font-size: 18px; }
+@media (max-width: 760px) { .marcador.jg-marcador .jg-estado { display: block; } }
+.jg-botones button[data-b="correr"] { background: var(--cielo); }
+.jg-botones button[hidden] { display: none; }
+
+/* ---------- PS5: la tele a pantalla completa */
+.ps5 { position: fixed; inset: 0; z-index: 60; background: #0d1030; touch-action: none; -webkit-user-select: none; user-select: none; }
+.ps5[hidden] { display: none; }
+.ps5 canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.ps5-hud {
+  position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%);
+  display: flex; gap: 22px; padding: 6px 18px; border-radius: 999px;
+  background: rgba(13,16,48,.7); border: 2px solid #fff7ec; color: #fff7ec;
+  font: 800 clamp(20px, 3.4vw, 30px)/1.2 var(--f-display);
+}
+.ps5-hud #ps5Vidas { color: #ff6b7a; letter-spacing: .08em; }
+.ps5-hud #ps5Tiempo { font-family: var(--f-reloj); }
+.ps5-salir {
+  position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); right: calc(12px + env(safe-area-inset-right, 0px));
+  font: 800 16px var(--f-display); color: var(--tinta); background: var(--papel); border: 2px solid var(--tinta);
+  border-radius: 999px; padding: 8px 16px; box-shadow: var(--sombra); cursor: pointer; min-height: 44px;
+}
+.ps5-pad {
+  position: absolute; left: 0; right: 0; bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  display: flex; justify-content: space-between; align-items: flex-end; padding: 0 calc(14px + env(safe-area-inset-left, 0px)); pointer-events: none;
+}
+.ps5-b {
+  pointer-events: auto; min-width: 84px; min-height: 84px; border-radius: 50%;
+  font: 800 34px/1 var(--f-display); color: #fff7ec; background: rgba(61,155,212,.35);
+  border: 3px solid #fff7ec; cursor: pointer; touch-action: none;
+}
+.ps5-b:active { background: rgba(61,155,212,.75); }
+.ps5-escudo { border-radius: 18px; min-width: 120px; min-height: 64px; font-size: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(42,168,118,.45); }
+.ps5-escudo small { font: 700 11px var(--f-texto); opacity: .85; margin-top: 2px; }
+.toque .ps5-escudo small { display: none; }
+.ps5-escudo.carga { opacity: .45; }
+/* con teclado no hacen falta las flechas en pantalla (igual se pueden usar con el mouse) */
+html:not(.toque) .ps5-b[data-d="-1"], html:not(.toque) .ps5-b[data-d="1"] { opacity: .55; }
+.ps5-fin {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: min(460px, calc(100% - 32px)); text-align: center;
+  background: var(--papel); color: var(--tinta); border: 2px solid var(--tinta); border-radius: 16px; box-shadow: 6px 6px 0 var(--tinta);
+  padding: 20px 20px 22px;
+}
+.ps5-fin[hidden] { display: none; }
+.ps5-fin h2 { margin: 2px 0 8px; font: 800 30px/1.1 var(--f-display); }
+.ps5-fin p { margin: 0 0 16px; font-size: 18px; line-height: 1.45; }
+.toque .ps5-fin p { font-size: 22px; }
+.toque .ps5-fin .btn { font-size: 22px; min-height: 60px; }

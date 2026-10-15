@@ -4,6 +4,7 @@
    - A veces hace travesuras: papá llega y pregunta quién fue. Tú decides si la cubres, dices la verdad o la acusas.
    - El vínculo (confianza del perro en ti) se guarda entre días.
    - Silbato (tecla F o botón Silbar): viene corriendo aunque esté en otro cuarto.
+   - Quédate (tecla G o botón Quédate): se queda esperando en ese lugar hasta que la silbes.
    - Jugar: traer el palo en el jardín, dar la patita. Su casita en el jardín: limpiarla y mandarla a descansar. */
 (function () {
   'use strict';
@@ -514,9 +515,62 @@
   const bSilbar = document.querySelector('#bSilbar');
   bSilbar.addEventListener('click', () => { silbar(); bSilbar.blur(); });
   bSilbar.addEventListener('mousedown', (e) => e.preventDefault());
+  // ---------- "¡Quédate ahí!" (tecla G o botón Quédate): se queda esperando en ese lugar; con Silbar vuelve
+  const puedeQuedarse = () => !!M.D && M.modo === 'sigue' && CASA.includes(A.escena.nombre) && !A.escena.conPerro;
+  function quedate() {
+    const st = A.estado();
+    if (!activo() || !st.jugando || st.cine || st.panel || st.accion || st.alarma || st.levantando || A.S.fase === 'colegio' || A.S.fase === 'prologo') return false;
+    if (H.futbol && H.futbol.jugando) return false;
+    if (!puedeQuedarse()) {
+      if (M.modo === 'espera') A.avisar(`${nom()} ya te está esperando. Silba para que venga.`);
+      return true;
+    }
+    M.modo = 'espera'; M.esperaEn = A.escena.nombre;
+    const q = M.D.root.position; M.esperaPos = { x: q.x, z: q.z };
+    M.D.anim = 'quieto';
+    cambiarVinculo(1);
+    A.decir(A.P, `¡Quieta, ${nom()}! Espérame aquí.`, 1.8, false);
+    A.avisar(`${nom()} se queda esperándote aquí. Toca Silbar para que vuelva.`, 'bien');
+    A.evento('perroQuieta', { lugar: M.esperaEn });
+    return true;
+  }
+  A.alTecla((e) => { if (e.code !== 'KeyG' || e.repeat) return false; return quedate(); });
+  document.body.insertAdjacentHTML('beforeend', '<button class="b-silbar b-quedate" id="bQuedate" type="button" hidden aria-label="Pedirle a tu cachorrita que se quede ahí"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 21V11.5a1.5 1.5 0 013 0V6a1.5 1.5 0 013 0v5V4.5a1.5 1.5 0 013 0V11v-4a1.5 1.5 0 013 0v8a6 6 0 01-6 6z"/></svg><span>Quédate</span><kbd data-t="">G</kbd></button>');
+  const bQuedate = document.querySelector('#bQuedate');
+  bQuedate.addEventListener('click', () => { quedate(); bQuedate.blur(); });
+  bQuedate.addEventListener('mousedown', (e) => e.preventDefault());
+  // se ubica junto a Silbar, donde no tape otro botón (cada pantalla acomoda Silbar distinto)
+  const NO_TAPAR = ['#palanca .pl-base', '#bAccion', '#bCorrer', '#bSonido', '.b-mapa', '#bAlbum', '#crecerHud', '#hLugar', '#prompt', '#bSaltar', '#bAgachar', '#bFoto', '#tiempo', '#hStats', '#lista', '#mapa'];
+  function ubicarQuedate() {
+    const s = bSilbar.getBoundingClientRect();
+    const z = bSilbar.currentCSSZoom || 1;
+    bQuedate.style.zoom = z === 1 ? '' : String(z);
+    bQuedate.style.right = 'auto'; bQuedate.style.bottom = 'auto';
+    const q = bQuedate.getBoundingClientRect(), w = q.width, h = q.height, sep = 8;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const cajas = NO_TAPAR.map((sel) => document.querySelector(sel)).filter(Boolean).map((e) => e.getBoundingClientRect()).filter((r) => r.width && r.height);
+    // en tablet la franja central (25%..75% del ancho) queda libre para ver la escena
+    const tablet = vw >= 700 && vh >= 600;
+    const libre = (x, y) => x >= 2 && y >= 2 && x + w <= vw - 2 && y + h <= vh - 2 && !cajas.some((r) => x < r.right + 4 && r.left < x + w + 4 && y < r.bottom + 4 && r.top < y + h + 4)
+      && !(x < s.right && s.left < x + w && y < s.bottom && s.top < y + h)
+      && !(tablet && y < vh * 0.75 && x < vw * 0.75 && x + w > vw * 0.25);
+    const arriba = [1, 2, 3, 4].map((k) => [s.left, s.top - k * (h + sep)]);
+    // tablet parada: a la derecha de la palanca, alineado abajo (muy abajo: no quita escena)
+    const pl = document.querySelector('#palanca .pl-base');
+    const rp = pl ? pl.getBoundingClientRect() : null;
+    const juntoPalanca = vh > vw && rp && rp.width ? [[rp.right + sep, rp.bottom - h]] : [];
+    const op = tablet
+      ? juntoPalanca.concat([[s.right + sep, s.top], [s.left - w - sep, s.top], [s.left, s.bottom + sep]], arriba)
+      : [[s.right + sep, s.top], [s.left, s.top - h - sep], [s.left - w - sep, s.top], [s.left, s.bottom + sep], [s.right + sep, s.top - h - sep], [s.left, s.top - 2 * (h + sep)]];
+    const [x, y] = op.find(([a, b]) => libre(a, b)) || op[1];
+    bQuedate.style.left = `${Math.round(x / z)}px`; bQuedate.style.top = `${Math.round(y / z)}px`;
+  }
   setInterval(() => {
     const st = A.estado(), ver = st.jugando && !document.querySelector('#hud').hidden && activo() && A.S.fase !== 'colegio' && !(H.futbol && H.futbol.jugando);
     if (bSilbar.hidden === ver) bSilbar.hidden = !ver;
+    const verQ = ver && puedeQuedarse() && !st.panel && !st.cine;
+    if (bQuedate.hidden === verQ) bQuedate.hidden = !verQ;
+    if (verQ) ubicarQuedate();
   }, 400);
 
   // ---------- travesuras
@@ -669,6 +723,7 @@
     cambiarVinculo,
     get necesidades() { return N; },
     silbar,
+    quedate,
     get animo() { return animo; },
     get diasSinJugar() { return diasSinJugar; },
     get collar() { return LOOK.collar; },

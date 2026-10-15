@@ -43,3 +43,25 @@
 .tr-truco { margin: 0 0 14px; padding: 10px 12px; background: #fff6d9; border-left: 5px solid var(--sol); border-radius: 8px; font-weight: 700; line-height: 1.45; }
 .tr-resultado { font-weight: 700; color: var(--tinta-2); }
 @media (prefers-reduced-motion: reduce) { .tr-item, .tr-item.tachada, .tr-item.tachada::after, .tr-hoja.hambre .tr-pregunta { animation: none; } .tr-item.tachada { opacity: .35; } }
+
+/* ---- colegio (Ronda 4): opciones, lectura, problemas y cuentas en columnas */
+.tr-teclado[hidden], .tr-ops[hidden] { display: none; }
+.tr-preg-txt { font-size: clamp(24px, 5vw, 32px); line-height: 1.25; text-wrap: balance; }
+.tr-lectura { margin: 6px 0 4px; padding: 10px 14px; background: #fff; border: 2px dashed #b7c3d6; border-radius: 12px; font-weight: 700; font-size: 18px; line-height: 1.5; }
+.tr-problema { margin: 8px 0 0; text-align: center; font-weight: 800; font-size: 20px; line-height: 1.4; }
+.tr-ops { display: grid; gap: 10px; max-width: 460px; margin: 0 auto; }
+.tr-op { grid-template-columns: auto 1fr; align-items: center; padding: 14px 12px; min-height: 58px; }
+.tr-op kbd { grid-row: auto; align-self: center; }
+.tr-op .op-t { font-size: 22px; }
+.tr-op.correcta { background: #c9f0db; border-color: var(--bueno); }
+.tr-op.mala { background: #fbd3cc; border-color: var(--malo); }
+.tr-total-txt { font-size: 30px; padding: 4px 16px; }
+.tr-cuenta { display: inline-flex; flex-direction: column; align-items: flex-end; padding: 10px 18px; background: #2f5d46; color: #f4f1ea; border-radius: 12px; border: 4px solid #8a5a3b; font: 800 40px/1.1 var(--f-display); }
+.tr-fila { display: flex; align-items: center; }
+.tr-fila i { font-style: normal; width: 1.1em; text-align: center; }
+.tr-sig { width: 1em; text-align: center; }
+.tr-lleva { font-size: 22px; color: #ffb3a7; min-height: 26px; }
+.tr-raya { align-self: stretch; height: 4px; background: #f4f1ea; margin: 4px 0; }
+.tr-res { color: #ffe58a; animation: tr-sale .4s ease-out backwards; animation-delay: 1.2s; }
+.tr-pasos { margin: 0; padding-left: 22px; max-width: 320px; font-weight: 700; line-height: 1.45; }
+.tr-pasos li { animation: tr-sale .35s ease-out backwards; animation-delay: var(--d); }

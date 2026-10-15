@@ -1,0 +1,107 @@
+/* Pintar (Ronda 4): hoja en blanco a pantalla completa con paleta grande para dedos de 7 años. */
+.pintar {
+  position: fixed; inset: 0; z-index: 95;
+  display: flex; flex-direction: column; gap: 10px;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) calc(14px + env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) calc(14px + env(safe-area-inset-left, 0px));
+  background: #f4e7d4 radial-gradient(circle at 20% 10%, #fff7ec 0, #f4e7d4 70%);
+  color: var(--tinta); font-family: var(--f-texto);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+}
+html.pintar-on #hud, html.pintar-on .b-mapa, html.pintar-on .mapa, html.pintar-on #bFoto, html.pintar-on #bAlbum { visibility: hidden; }
+
+.pi-cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.pi-cab h2 { margin: 0; font: 800 28px/1.1 var(--f-display); }
+.pi-acc { display: flex; gap: 8px; flex-wrap: wrap; }
+.pi-b {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 52px; padding: 6px 16px;
+  font: 800 18px var(--f-display); color: var(--tinta); background: #fff;
+  border: 3px solid var(--tinta); border-radius: 999px; box-shadow: 0 3px 0 var(--tinta); cursor: pointer;
+  touch-action: manipulation;
+}
+.pi-b:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--tinta); }
+.pi-guardar { background: var(--menta); color: #fff; }
+.pi-cerrar { width: 52px; justify-content: center; padding: 0; font-size: 22px; }
+
+.pi-cuerpo { flex: 1; min-height: 0; display: flex; gap: 14px; }
+.pi-mesa { flex: 1; min-width: 0; min-height: 0; display: grid; place-items: center; container-type: size; }
+.pi-hoja {
+  position: relative; width: min(100cqw, calc(100cqh * 4 / 3)); aspect-ratio: 4 / 3;
+  background: #fff; border: 3px solid var(--tinta); border-radius: 10px; box-shadow: 4px 4px 0 var(--tinta);
+  overflow: hidden; touch-action: none;
+}
+.pi-hoja canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+#piTrazo { cursor: crosshair; }
+.pintar.borrando #piTrazo { cursor: cell; }
+
+/* paleta: columna a la derecha (acostado) */
+.pi-paleta { flex: 0 0 auto; display: flex; flex-direction: column; gap: 12px; justify-content: center; overflow-y: auto; }
+.pi-colores { display: grid; grid-template-columns: repeat(3, 56px); gap: 9px; }
+.pi-color {
+  width: 56px; height: 56px; border-radius: 50%; padding: 0; cursor: pointer; touch-action: manipulation;
+  background: var(--c); border: 3px solid var(--tinta); box-shadow: 0 3px 0 var(--tinta);
+}
+.pi-color.sel { outline: 5px solid var(--sol); outline-offset: 3px; transform: scale(1.06); }
+.pi-pinceles { display: grid; grid-template-columns: repeat(3, 56px); gap: 9px; }
+.pi-grosor, .pi-borrador {
+  height: 56px; display: grid; place-items: center; cursor: pointer; touch-action: manipulation; padding: 0;
+  background: #fff; border: 3px solid var(--tinta); border-radius: 14px; box-shadow: 0 3px 0 var(--tinta); color: var(--tinta);
+}
+.pi-grosor i { display: block; width: var(--g); height: var(--g); border-radius: 50%; background: var(--tinta); }
+.pi-grosor.sel, .pi-borrador.sel { background: var(--sol); }
+.pi-borrador { grid-column: 1 / -1; grid-auto-flow: column; gap: 8px; font: 800 18px var(--f-display); }
+.pi-borrador span:first-child { font-size: 24px; }
+
+/* aviso al cerrar con un dibujo sin guardar */
+.pi-aviso { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(29, 35, 64, .45); }
+.pi-aviso-caja { background: var(--papel); border: 3px solid var(--tinta); border-radius: 18px; box-shadow: 5px 5px 0 var(--tinta); padding: 20px 24px; text-align: center; max-width: calc(100% - 32px); }
+.pi-aviso-caja p { margin: 0 0 14px; font: 800 24px var(--f-display); }
+.pi-aviso-b { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.pi-listo {
+  position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%);
+  background: var(--sol); color: var(--tinta); font: 800 30px var(--f-display); padding: 14px 28px;
+  border: 3px solid var(--tinta); border-radius: 18px; box-shadow: 4px 4px 0 var(--tinta); pointer-events: none;
+}
+.pi-listo.salta { animation: pi-salta .5s ease-out; }
+@keyframes pi-salta { 0% { transform: translate(-50%, -50%) scale(.5); } 70% { transform: translate(-50%, -50%) scale(1.12); } 100% { transform: translate(-50%, -50%) scale(1); } }
+
+/* parado (iPad vertical o celular): la paleta va abajo a lo ancho */
+@media (orientation: portrait) {
+  .pi-cuerpo { flex-direction: column; }
+  .pi-paleta { flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; overflow: visible; }
+  .pi-colores { grid-template-columns: repeat(6, 56px); }
+  .pi-pinceles { grid-template-columns: repeat(3, 56px) auto; }
+  .pi-borrador { grid-column: auto; padding: 0 14px; }
+}
+/* tablet: todo más grande */
+@media (min-width: 700px) and (min-height: 600px) {
+  .pi-cab h2 { font-size: 34px; }
+  .pi-b { min-height: 62px; font-size: 22px; padding: 6px 22px; }
+  .pi-cerrar { width: 62px; }
+  .pi-colores, .pi-pinceles { grid-template-columns: repeat(3, 66px); gap: 11px; }
+  .pi-color, .pi-grosor, .pi-borrador { width: auto; height: 66px; }
+  .pi-color { width: 66px; }
+  .pi-borrador { font-size: 22px; }
+}
+@media (orientation: portrait) and (min-width: 700px) {
+  .pi-colores { grid-template-columns: repeat(6, 66px); }
+  .pi-pinceles { grid-template-columns: repeat(3, 66px) auto; }
+}
+/* celular acostado (poca altura): botones más chicos para que entre la hoja */
+@media (max-height: 480px) {
+  .pintar { gap: 6px; padding-top: 6px; padding-bottom: 6px; }
+  .pi-cab h2 { font-size: 20px; }
+  .pi-b { min-height: 42px; font-size: 15px; padding: 4px 12px; }
+  .pi-cerrar { width: 42px; }
+  .pi-b span[aria-hidden] { display: none; }
+  .pi-cerrar span[aria-hidden] { display: inline; }
+  .pi-colores, .pi-pinceles { grid-template-columns: repeat(4, 44px); gap: 6px; }
+  .pi-color, .pi-grosor, .pi-borrador { height: 44px; }
+  .pi-color { width: 44px; }
+  .pi-borrador { font-size: 15px; }
+}
+
+/* álbum: pestaña Dibujos */
+.pi-nuevo { cursor: pointer; text-align: left; font: inherit; color: inherit; background: #fff8e1; border-style: dashed; }
+.pi-nuevo b { font-size: 20px; }
+.pi-dib-b { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.pi-mini { font: 800 14px var(--f-texto); background: var(--sol); color: var(--tinta); border: 2px solid var(--tinta); border-radius: 999px; padding: 4px 12px; cursor: pointer; }

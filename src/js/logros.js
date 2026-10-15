@@ -132,7 +132,7 @@
 <button class="b-album" id="bAlbum" type="button" hidden aria-label="Abrir el álbum (tecla L)"><span>Álbum</span><b id="bAlbumN">0</b></button>
 <div class="pantalla album" id="album" hidden><div class="hoja al-hoja" role="dialog" aria-labelledby="alTitulo">
   <div class="al-cab"><div><p class="eyebrow">Tu álbum</p><h2 id="alTitulo">Lo que descubriste</h2></div><button class="btn sec" type="button" id="alCerrar">Cerrar</button></div>
-  <nav class="al-tabs"><button type="button" data-t="cosas" aria-selected="true">Descubrimientos</button><button type="button" data-t="logros">Logros</button><button type="button" data-t="fotos">Fotos</button></nav>
+  <nav class="al-tabs"><button type="button" data-t="cosas" aria-selected="true">Descubrimientos</button><button type="button" data-t="logros">Logros</button><button type="button" data-t="fotos">Fotos</button><button type="button" data-t="dibujos">Dibujos</button></nav>
   <div class="al-grid" id="alGrid"></div>
 </div></div>`);
   let pestana = 'cosas';
@@ -140,6 +140,8 @@
   function pintarAlbum() {
     document.querySelectorAll('.al-tabs button').forEach((b) => b.setAttribute('aria-selected', b.dataset.t === pestana));
     // CREATIVO (Ola 2): la pestaña Fotos la pinta creativo.js
+    // PINTAR (Ronda 4): la pestaña Dibujos la pinta pintar.js
+    if (pestana === 'dibujos') { const D = H.pintar; $('#alTitulo').textContent = D ? `Dibujos · ${D.dibujos().length} de ${D.MAX}` : 'Dibujos'; $('#alGrid').innerHTML = D ? D.dibujosHTML() : ''; return; }
     if (pestana === 'fotos') { const C = H.creativo; $('#alTitulo').textContent = C ? `Fotos · ${C.fotos().length} de ${C.MAX_FOTOS}` : 'Fotos'; $('#alGrid').innerHTML = C ? C.fotosHTML() : ''; return; }
     $('#alTitulo').textContent = pestana === 'cosas' ? `Descubrimientos · ${album.size} de ${COSAS.length}` : `Logros · ${logros.size} de ${LOGROS.length}`;
     $('#alGrid').innerHTML = pestana === 'cosas'

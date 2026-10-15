@@ -92,6 +92,19 @@
     }
     return new THREE.CanvasTexture(cv);
   }
+  // PINTAR (Ronda 4): si dibujaste tu cartulina de verdad (H.pintar), se ve tu dibujo
+  function texCartulina(f, sinNada) {
+    if (f.dibujo) return new THREE.TextureLoader().load(f.dibujo);
+    return f.avance || !sinNada ? dibujar(f.tema, f.avance) : dibujar(f.tema, 0, true);
+  }
+  function abrirHoja() {
+    const f = feria();
+    if (!H.pintar || !f.tema) return false;
+    return H.pintar.abrir({
+      titulo: TEMAS[f.tema].titulo, plantilla: f.tema, fondo: f.dibujo || null,
+      alGuardar: (data) => { guardar({ dibujo: data }); A.refrescar(); A.evento('feriaDibujo', { tema: f.tema }); },
+    });
+  }
   // cartulina con su soporte (caballete en casa, panel en el stand)
   function cartulina(sc, x, y, z, ry, ancho, tex, alto) {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(ancho, alto || ancho * 0.75), new THREE.MeshBasicMaterial({ map: tex }));
@@ -118,7 +131,7 @@
     const pintar = () => {
       const f = feria();
       if (lamina) { sc.remove(lamina); lamina.material.map.dispose(); }
-      lamina = cartulina(sc, CAB.x, 1.04, CAB.z + 0.12, 0, 0.82, dibujar(f.tema, f.avance));
+      lamina = cartulina(sc, CAB.x, 1.04, CAB.z + 0.12, 0, 0.82, texCartulina(f));
       lamina.rotation.x = -0.12;
     };
     pintar();
@@ -143,6 +156,7 @@
         if (H.crecer) H.crecer.sumar('conocimiento', 3, 'preparaste tu trabajo');
         A.decir(A.P, n.avance >= 2 ? '¡Me quedó lindo! Ya está lista.' : '¡Ya empecé! Mañana la termino.', 2.6);
         A.evento('feriaPreparar', { tema, avance: n.avance });
+        setTimeout(abrirHoja, 500);   // PINTAR: ahora dibujas tu cartulina de verdad
       },
     };
   }
@@ -158,7 +172,7 @@
     if (f.avance < 2) {
       return {
         titulo: 'Cartulina de la feria', texto: `Tu trabajo de ${TEMAS[f.tema].corto} va por la mitad.`,
-        opciones: [sesion('Terminar la cartulina', 'Pintas, pegas los dibujos y escribes lo que vas a decir.', f.tema, 'Terminando la cartulina')],
+        opciones: [sesion('Terminar la cartulina', 'Pintas, pegas los dibujos y escribes lo que vas a decir.', f.tema, 'Terminando la cartulina')].concat(H.pintar ? [opPintar()] : []),
       };
     }
     return {
@@ -167,7 +181,15 @@
         texto: 'Ensayar lo que vas a decir', nota: 'Practicas en voz alta. Te da seguridad.', min: 10, esfuerzo: false, ef: { animo: 4, motivacion: 3 },
         pasos: [{ ruta: [[CAB.x, -2.15]], mira: [CAB.x, CAB.z], anim: 'saludar', dur: 1.6, min: 10, progreso: 'Ensayando' }],
         alTerminar: () => A.decir(A.P, TEMAS[f.tema].idea, 3.5),
-      }],
+      }].concat(H.pintar ? [opPintar()] : []),
+    };
+  }
+  // PINTAR: retocar el dibujo de la cartulina cuando quieras (no cuenta como sesión)
+  function opPintar() {
+    return {
+      texto: 'Pintar mi cartulina', icono: '🖍️', nota: 'Dibuja y colorea con tus colores.', min: 10, esfuerzo: false, ef: { animo: 4 },
+      pasos: [{ ruta: [[CAB.x, -2.15]], mira: [CAB.x, CAB.z], anim: 'cocinar', dur: 0.8, min: 10, progreso: 'Sacando tus colores' }],
+      alTerminar: () => setTimeout(abrirHoja, 300),
     };
   }
 
@@ -218,7 +240,7 @@
       A.box(sc, 1.34, 0.06, 0.64, s.mio ? '#f2c14e' : s.color, s.x, 0.77, Z);
       E.solido(s.x, Z, 1.3, 0.6);
       if (s.mio) {
-        const tex = f.avance ? dibujar(f.tema, f.avance) : dibujar(f.tema, 0, true);
+        const tex = texCartulina(f, true);
         F.lamina = cartulina(sc, s.x, 1.35, Z - 0.28, 0, 1.0, tex);
         return;
       }

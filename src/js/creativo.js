@@ -52,6 +52,8 @@
       { id: 'cohete', nombre: 'Cohete', dibujo: 'cohete' },
       { id: 'dino', nombre: 'Dinosaurio', dibujo: 'dino', premio: 'truco-rodar' },
       { id: 'castillo', nombre: 'Castillo', dibujo: 'castillo', premio: 'gorrito' },
+      { id: 'midibujo', nombre: 'Mi dibujo', mio: true },          // PINTAR (Ronda 4): tu último dibujo (H.pintar)
+      { id: 'nuevo', nombre: 'Dibujar uno nuevo', nuevo: true },   // abre la hoja; no se guarda como cuadro
     ] },
     adorno: { nombre: 'Adorno', icono: '🪴', ops: [
       { id: 'nada', nombre: 'Nada', dibujo: 'nada' },
@@ -236,7 +238,9 @@
     else if (cat === 'alfombra') pintarMat(MAT.alfombra, op, 256, 192);
     else if (cat === 'cama') pintarMat(MAT.cama, op, 256, 256);
     else if (cat === 'cuadro' && R.lienzo) {
-      if (id === 'paisaje') { R.lienzo.material = R.lienzo.userData.mat0; if (R.dentro) R.dentro.visible = true; }
+      const tx = op.mio && H.pintar ? H.pintar.textura() : null;   // PINTAR: "Mi dibujo"
+      if (id === 'paisaje' || (op.mio && !tx) || op.nuevo) { R.lienzo.material = R.lienzo.userData.mat0; if (R.dentro) R.dentro.visible = true; }
+      else if (tx) { MAT.cuadro.map = tx; MAT.cuadro.color.set('#ffffff'); MAT.cuadro.needsUpdate = true; R.lienzo.material = MAT.cuadro; if (R.dentro) R.dentro.visible = false; }
       else { pintarMat(MAT.cuadro, op, 256, 192); R.lienzo.material = MAT.cuadro; if (R.dentro) R.dentro.visible = false; }
     } else if (cat === 'adorno') ponerAdorno(id);
   }
@@ -401,10 +405,15 @@
     } else {
       const d = decoracion();
       html = CATS[P0.tab].ops.map((op) => ficha(`data-cat="${P0.tab}" data-id="${op.id}"`,
-        op.dibujo ? `<img src="${vista(op.dibujo)}" alt="" />` : `<span class="deco-color" style="background:${op.color}"></span>`,
+        op.mio || op.nuevo ? vistaDibujo(op) : op.dibujo ? `<img src="${vista(op.dibujo)}" alt="" />` : `<span class="deco-color" style="background:${op.color}"></span>`,
         op.nombre, d[P0.tab] === op.id, !libre(op), textoCandado(op))).join('');
     }
     $('#decoGrid').innerHTML = html;
+  }
+  // PINTAR: la vista de "Mi dibujo" y "Dibujar uno nuevo"
+  function vistaDibujo(op) {
+    const d = op.mio && H.pintar ? H.pintar.dibujoCuadro() : null;
+    return d ? `<img src="${d.data}" alt="" />` : '<span class="deco-color" style="background:#fff;display:grid;place-items:center;font-size:34px">✏️</span>';
   }
   function avisoCandado(n) {
     const m = $('#decoMsg');
@@ -417,6 +426,11 @@
     const b = e.target.closest('.deco-op'); if (!b) return;
     if (b.dataset.cat) {
       const op = buscar(b.dataset.cat, b.dataset.id);
+      // PINTAR: "Dibujar uno nuevo" (o "Mi dibujo" sin dibujos todavía) abre la hoja en blanco
+      if (op && (op.nuevo || (op.mio && !(H.pintar && H.pintar.dibujos().length)))) {
+        if (H.pintar) H.pintar.abrir({ titulo: 'Un cuadro para mi cuarto', alGuardar: (data, d) => { H.pintar.ponerEnCuarto(d.id); pintar(); } });
+        return;
+      }
       if (!libre(op)) { avisoCandado(estrellasDe(op)); return; }
       elegir(b.dataset.cat, b.dataset.id); $('#decoMsg').textContent = '';
     } else if (b.dataset.collar || b.dataset.ropa) {

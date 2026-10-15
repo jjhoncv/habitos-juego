@@ -29,3 +29,66 @@
 }
 .m-mama circle { fill: #d9667a; stroke: #fff; stroke-width: .12; }
 .m-papa circle { fill: var(--menta); stroke: #fff; stroke-width: .12; }
+
+/* ---------- estrellas (Ronda 4): las de la semana y las metas de hoy, arriba del mapa y en el botón Mapa */
+.m-estrellas {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin: 0 0 5px; padding: 3px 8px; border-radius: 9px; background: #fff3cf; border: 2px solid var(--tinta);
+  font-family: var(--f-display); line-height: 1.05;
+}
+.m-sem, .m-hoy { white-space: nowrap; }
+.m-sem { display: inline-flex; align-items: baseline; gap: 4px; }
+.m-sem i { font-style: normal; color: var(--sol); font-size: 20px; text-shadow: 0 1px 0 var(--tinta); }
+.m-sem b { font-size: 22px; font-weight: 800; }
+.m-estrellas small { font: 800 11px var(--f-texto); color: var(--tinta-2); }
+.m-hoy { display: inline-flex; align-items: baseline; gap: 4px; }
+.m-hoy-est { color: var(--sol); font-size: 18px; letter-spacing: 1px; text-shadow: 0 1px 0 var(--tinta); }
+#mHoyMetas { display: none; }
+/* mapa chico (computadora): la tarjetita de estrellas va pegada a la derecha del mapa, sin taparle nada encima */
+.mapa:not(.grande) .m-estrellas {
+  position: absolute; left: calc(100% + 8px); bottom: -2px; margin: 0; padding: 6px 10px;
+  flex-direction: column; align-items: flex-start; gap: 2px; border-radius: 12px; box-shadow: var(--sombra); background: #fff3cf;
+}
+.mapa.grande .m-estrellas { padding: 8px 16px; margin-bottom: 10px; border-radius: 14px; }
+.mapa.grande .m-sem i { font-size: 38px; }
+.mapa.grande .m-sem b { font-size: 40px; }
+.mapa.grande .m-estrellas small { font-size: 17px; }
+.mapa.grande .m-hoy-est { font-size: 34px; }
+.mapa.grande #mHoyMetas { display: inline; }
+.m-estrellas.gana { animation: m-gana 1.4s ease-out; }
+@keyframes m-gana {
+  0% { transform: scale(1); background: #fff3cf; }
+  20% { transform: scale(1.12); background: var(--sol); box-shadow: 0 0 0 6px rgba(242, 166, 35, .45); }
+  60% { transform: scale(.98); }
+  100% { transform: scale(1); background: #fff3cf; box-shadow: none; }
+}
+
+/* el botón Mapa (tablet y celular): una pastilla con ★ de la semana y las de hoy */
+.b-mapa { overflow: visible; }
+.bm-est {
+  position: absolute; left: auto; right: 4px; bottom: calc(100% + 6px);
+  display: flex; flex-direction: column; align-items: center; gap: 0; padding: 2px 7px 3px; white-space: nowrap;
+  background: #fff3cf; border: 2px solid var(--tinta); border-radius: 12px; box-shadow: 0 2px 0 var(--tinta);
+  font-family: var(--f-display); line-height: 1; pointer-events: none;
+}
+.bm-est b { font-size: 19px; font-weight: 800; color: var(--tinta); display: inline-flex; gap: 2px; align-items: baseline; }
+.bm-est b i { font-style: normal; color: var(--sol); text-shadow: 0 1px 0 var(--tinta); }
+.bm-hoy { font-size: 13px; color: var(--sol); letter-spacing: 0; text-shadow: 0 1px 0 var(--tinta); }
+.bm-est.gana { animation: bm-gana 1.4s ease-out; }
+@keyframes bm-gana {
+  0% { transform: scale(1); }
+  20% { transform: scale(1.35); background: var(--sol); }
+  60% { transform: scale(.95); }
+  100% { transform: scale(1); }
+}
+/* parado (botones en columna sobre Usar): la pastilla va a la izquierda del botón para no tapar el Álbum */
+@media (max-width: 600px), (orientation: portrait) and (min-width: 601px) {
+  .bm-est { right: calc(100% + 8px); bottom: 50%; transform: translateY(50%); }
+  .bm-est.gana { animation-name: bm-gana-p; }
+  @keyframes bm-gana-p {
+    0% { transform: translateY(50%) scale(1); }
+    20% { transform: translateY(50%) scale(1.35); background: var(--sol); }
+    60% { transform: translateY(50%) scale(.95); }
+    100% { transform: translateY(50%) scale(1); }
+  }
+}
